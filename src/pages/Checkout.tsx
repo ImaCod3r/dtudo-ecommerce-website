@@ -1,0 +1,371 @@
+import { useState, useEffect, useRef, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { useCart } from '../context/CartContext';
+import { useAuth } from '../auth/useAuth';
+
+import { createOrder } from '../services/order';
+import { BASE_URL } from '../api/axios';
+
+import { Truck, Phone, MapPin, CheckCircle2, Loader2, Map as MapIcon, X } from 'lucide-react';
+
+import type { Address } from '../types';
+// Components
+import Back from '../components/Back';
+
+// Leaflet
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
+
+function Checkout() {
+  const { cart, subtotal, clearCart, cartId } = useCart();
+  const { user } = useAuth();
+  const [address, setAddress] = useState<Address | null>(null);
+  const navigate = useNavigate();
+  const [isOrdered, setIsOrdered] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const suggestionRef = useRef<HTMLDivElement>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+
+  const [formData, setFormData] = useState({
+    address: '',
+    city: '',
+    phone: ''
+  });
+
+  const total = subtotal + 1500 + (subtotal * 0.1);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!user || !cartId) return;
+
+    setIsLoading(true);
+
+    const orderData = {
+      items: cart,
+      address: address!,
+      phone: formData.phone,
+      total_price: total,
+    }
+
+    console.log(orderData);
+
+    try {
+      await createOrder(orderData);
+      setIsOrdered(true);
+      clearCart()
+    } catch (error) {
+      console.error("Order failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Initialize Map
+  useEffect(() => {
+    if (showMap && mapContainerRef.current) {
+      // Default center: Luanda, Angola
+      const defaultPos: [number, number] = [-8.8390, 13.2894];
+
+      if (!mapInstanceRef.current) {
+        mapInstanceRef.current = L.map(mapContainerRef.current).setView(defaultPos, 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(mapInstanceRef.current);
+
+        markerRef.current = L.marker(defaultPos, { draggable: true }).addTo(mapInstanceRef.current);
+
+        mapInstanceRef.current.on('click', (e: any) => {
+          markerRef.current.setLatLng(e.latlng);
+        });
+
+        // Try to locate user
+        if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition((position) => {
+            const userPos: [number, number] = [position.coords.latitude, position.coords.longitude];
+            mapInstanceRef.current.setView(userPos, 16);
+            markerRef.current.setLatLng(userPos);
+          });
+        }
+      }
+
+      // Cleanup on unmount or close
+      return () => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
+        }
+      };
+    }
+  }, [showMap]);
+
+  const handleConfirmLocation = async () => {
+    if (!markerRef.current) return;
+
+    const { lat, lng } = markerRef.current.getLatLng();
+
+    setIsGeocoding(true);
+
+    try {
+      // Use Nominatim for reverse geocoding
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`);
+      const data = await response.json();
+
+      if (data && data.display_name) {
+        const address = data.display_name;
+
+        setAddress({
+          name: address,
+          long: lng,
+          lat: lat
+        });
+
+        setFormData(prev => ({
+          ...prev,
+          address: address,
+        }));
+      }
+    } catch (error) {
+      console.error("Geocoding error:", error);
+    } finally {
+      setIsGeocoding(false);
+      setShowMap(false);
+    }
+  };
+
+  if (cart.length === 0 && !isOrdered) {
+    navigate('/cart');
+    return null;
+  }
+
+  if (isOrdered) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-32 flex flex-col items-center justify-center text-center">
+        <CheckCircle2 className="w-20 h-20 text-green-500 mb-6 animate-bounce" />
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Pedido Confirmado!</h1>
+        <p className="text-gray-500 mb-8 max-w-md">Obrigado pela sua compra. Enviamos um e-mail de confirmação para o seu endereço cadastrado.</p>
+        <div className="text-sm text-gray-400">Redirecionando para seus pedidos...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        {/* Formulário */}
+        <div>
+          <Back />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Detalhes de Envio</h1>
+
+          {!user ? (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-6 rounded-3xl mb-8">
+              <h3 className="text-[#008cff] font-bold mb-2">Login Necessário</h3>
+              <p className="text-sm text-blue-800/70 dark:text-blue-300 mb-4">Por favor, faça login com o Google para salvar seu endereço e acompanhar seu histórico de pedidos.</p>
+              <button
+                onClick={() => navigate('/login')}
+                className="bg-[#008cff] text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-[#007ad6]"
+              >
+                Entrar com Google
+              </button>
+            </div>
+          ) : null}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="col-span-full">
+                <label className="block text-left text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Cidade</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ex: Luanda"
+                  className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 px-4 focus:ring-2 focus:ring-[#008cff] outline-none dark:text-white transition-colors"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                />
+              </div>
+
+              <div className="col-span-full relative" ref={suggestionRef}>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Endereço</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowMap(true)}
+                    className="flex items-center gap-1.5 text-xs font-black text-[#008cff] hover:text-[#007ad6] uppercase tracking-wider transition-colors"
+                  >
+                    <MapIcon className="w-3.5 h-3.5" /> Selecionar no Mapa
+                  </button>
+                </div>
+                <div className="relative">
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    required
+                    type="text"
+                    placeholder="Comece a digitar sua rua..."
+                    className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-10 focus:ring-2 focus:ring-[#008cff] outline-none dark:text-white transition-colors"
+                    value={formData.address}
+                    onChange={() => void (0)}
+                    autoComplete="off"
+                  />
+
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-left text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Telefone</label>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    required
+                    type="tel"
+                    placeholder="900 000 000"
+                    className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 focus:ring-2 focus:ring-[#008cff] outline-none dark:text-white"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!user || isLoading}
+              className={`w-full py-4 rounded-2xl font-bold text-lg shadow-xl active:scale-95 transition-all mt-6 ${user && !isLoading
+                ? 'bg-[#008cff] text-white hover:bg-[#007ad6] shadow-[#008cff]/20'
+                : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                }`}
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" /> Processando...
+                </div>
+              ) : (
+                `Confirmar Pedido • Kz ${total.toLocaleString()}`
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Resumo do Pedido */}
+        <div className="lg:pl-12">
+          <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-8 sticky top-24">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <Truck className="w-6 h-6" /> Seu Pedido
+            </h2>
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 mb-6">
+              {cart.map((item) => (
+                <div key={item.id} className="flex justify-between items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shrink-0">
+                      <img src={`${BASE_URL}/${item.product.image_url}`} alt={item.product.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{item.product.name}</p>
+                      <p className="text-xs text-gray-500">Qtd: {item.quantity}</p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">Kz {(item.product.price * item.quantity).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Subtotal</span>
+                <span>Kz {subtotal.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Frete</span>
+                <span>Kz 1.500</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-white pt-3">
+                <span>Total</span>
+                <span className="text-[#008cff]">Kz {total.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Map Modal */}
+      {showMap && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-2 sm:p-8">
+          <div className="absolute inset-0 bg-gray-950/80 backdrop-blur-sm" onClick={() => setShowMap(false)}></div>
+          <div className="relative w-full max-w-4xl bg-white dark:bg-gray-900 rounded-3xl sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 h-[90vh] sm:h-[80vh]">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              <div>
+                <h2 className="text-base sm:text-lg font-black text-gray-900 dark:text-white">Selecione o Endereço</h2>
+                <p className="text-[10px] sm:text-xs text-gray-500">Toque no mapa para posicionar o marcador</p>
+              </div>
+              <button
+                onClick={() => setShowMap(false)}
+                className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="flex-1 relative">
+              <div ref={mapContainerRef} className="absolute inset-0 z-0"></div>
+              {/* Overlay for feedback */}
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none w-full px-4 flex justify-center">
+                <span className="bg-gray-900/90 text-white text-[9px] sm:text-[10px] font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-lg backdrop-blur-md uppercase tracking-widest border border-white/10 text-center">
+                  Mova o marcador ou toque para escolher
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-6 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 w-full sm:w-auto">
+                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-[#008cff] shrink-0" />
+                <span className="text-[10px] sm:text-xs font-bold truncate max-w-full">O endereço será detectado automaticamente</span>
+              </div>
+              <button
+                onClick={handleConfirmLocation}
+                disabled={isGeocoding}
+                className="w-full sm:w-auto bg-[#008cff] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm hover:bg-[#007ad6] shadow-xl shadow-[#008cff]/20 disabled:opacity-50 flex items-center justify-center gap-2 transition-all active:scale-95"
+              >
+                {isGeocoding ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Buscando Endereço...
+                  </>
+                ) : (
+                  'Confirmar Localização'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Checkout;

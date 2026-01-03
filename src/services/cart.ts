@@ -1,6 +1,7 @@
 import api from "../api/axios";
 
 export interface CartResponse {
+    cart: any;
     error: boolean;
     message: string;
     cart_item: {
@@ -19,18 +20,13 @@ export interface CartResponse {
     };
 }
 
-export async function getCart(user_id: string) {
-    const response = await api.get('/carts/user/cart', {
-        params: {
-            user_id
-        }
-    });
+export async function getCart() {
+    const response = await api.get('/carts/user/cart');
     return response.data;
 }
 
-export async function add(user_id: string, product_id: string, quantity: number = 1): Promise<CartResponse> {
+export async function add(product_id: string, quantity: number = 1): Promise<CartResponse> {
     const response = await api.post('/carts/add', {
-        user_id,
         product_id,
         quantity
     });
@@ -45,11 +41,12 @@ export async function update(user_id: string, item_id: string, quantity: number)
     return response.data;
 }
 
-export async function remove(user_id: string, item_id: string) {
-    const response = await api.delete(`/carts/remove/${item_id}`, {
-        data: {
-            user_id
-        }
-    });
+export async function remove(item_id: string) {
+    const response = await api.delete(`/carts/remove/${item_id}`);
+    return response.data;
+}
+
+export async function clear() {
+    const response = await api.delete(`/carts/clear`);
     return response.data;
 }

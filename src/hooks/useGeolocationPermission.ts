@@ -13,8 +13,6 @@ export function useGeolocationPermission() {
                 };
             });
         } else {
-            // Fallback for browsers that don't support permission API?
-            // usually we assume prompt if unknown
             setPermissionStatus('prompt');
         }
     }, []);

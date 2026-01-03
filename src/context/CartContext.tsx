@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { CartItem, Product } from '../types';
-import { add, getCart, remove, update } from '../services/cart';
+import { add, getCart, remove, update, clear } from '../services/cart';
 import { AuthContext } from '../auth/AuthContext';
 
 interface CartContextType {
   cart: CartItem[];
+  cartId: string | null;
   addToCart: (product: Product, quantity?: number) => Promise<void>;
   removeFromCart: (itemId: number) => void;
   updateQuantity: (itemId: number, quantity: number) => void;
@@ -18,19 +19,22 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { user } = useContext(AuthContext);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartId, setCartId] = useState<string | null>(null);
+
+  const getUserCart = async () => {
+    if (!user) {
+      setCart([]);
+      setCartId(null);
+      return;
+    }
+    const response = await getCart();
+    if (response?.cart) {
+      setCart(response.cart.items);
+      setCartId(response.cart.public_id);
+    }
+  };
 
   useEffect(() => {
-    const getUserCart = async () => {
-      if (!user) {
-        setCart([]);
-        return;
-      }
-      const response = await getCart(user.public_id);
-      if (response?.cart) {
-        setCart(response.cart.items);
-      }
-    };
-
     getUserCart();
   }, [user]);
 
@@ -41,9 +45,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const response = await add(user.public_id, product.id, quantity);
+      const response = await add(product.id, quantity);
 
       if (!response.error && response.cart_item) {
+        if (response.cart_item.cart_id) {
+          setCartId(response.cart.public_id);
+        }
         setCart(prev => {
           const newItem = response.cart_item;
 
@@ -66,7 +73,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.error("User must be logged in to remove from cart");
       return;
     }
-    await remove(user.public_id, itemId.toString());
+    await remove(itemId.toString());
     setCart(prev => prev.filter(item => item.id !== itemId));
   };
 
@@ -81,13 +88,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     ));
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = async () => {
+    try {
+      await clear();
+      setCartId(null);
+      setCart([]);
+    } catch (error) {
+      console.error("Failed to clear cart:", error);
+    }
+  }
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, totalItems, subtotal }}>
+    <CartContext.Provider value={{ cart, cartId, addToCart, removeFromCart, updateQuantity, clearCart, totalItems, subtotal }}>
       {children}
     </CartContext.Provider>
   );

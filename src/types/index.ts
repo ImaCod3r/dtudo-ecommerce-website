@@ -22,16 +22,36 @@ export interface Category {
   children: Partial<Category>[];
 }
 
+export interface Cart {
+  id: string;
+  items: CartItem[];
+}
+
 export interface CartItem {
   id: number;
+  cart_id?: number;
   quantity: number;
   product: Product;
 }
 
+export interface CreateOrder {
+  items: CartItem[];
+  address: Address;
+  phone: string;
+  total_price: number;
+}
+
 export interface Order {
   id: string;
-  date: string;
-  total: number;
+  total_price: number;
   items: CartItem[];
-  status: 'Delivered' | 'Processing' | 'Shipped';
+  address: Address;
+  user: User;
+  status: 'Pendente' | 'Confirmado' | 'Entregue' | 'Cancelado';
+}
+
+export interface Address {
+  name: string;
+  long: number;
+  lat: number;
 }

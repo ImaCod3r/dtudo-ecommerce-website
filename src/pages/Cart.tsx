@@ -9,11 +9,13 @@ import { BASE_URL } from '../api/axios';
 import Back from '../components/Back';
 
 function Cart() {
-    const { cart, removeFromCart, updateQuantity, subtotal } = useCart();
+    const { cart, removeFromCart, updateQuantity, subtotal, cartId } = useCart();
     const navigate = useNavigate();
     const shipping = 1500.00;
     const tax = subtotal * 0.1;
     const total = subtotal + shipping + tax;
+
+    console.log(cartId);
 
     if (cart.length === 0) {
         return (

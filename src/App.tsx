@@ -17,6 +17,7 @@ import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/Cart';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
+import Checkout from './pages/Checkout';
 
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
                           <Route path="/categoria/:category/:subcategory?" element={<Home />} />
                           <Route path="/produto/:public_id" element={<ProductDetails />} />
                           <Route path="/cart" element={<Cart />} />
+                          <Route path="/checkout" element={<Checkout />} />
                         </Routes>
                       </main>
                       <Footer />

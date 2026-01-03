@@ -48,7 +48,7 @@ function ProductDetails() {
                 {/* Product Image */}
                 <div>
                     <div className="aspect-video rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                        <img src={`${BASE_URL}/${product.image_url}`} alt={product.name} className="w-full h-full object-cover" />
+                        <img src={`${BASE_URL}/${product.image_url}`} alt={product.name} className="w-full h-full object-contain" />
                     </div>
 
                     <div className="mt-auto pt-8 border-t border-gray-50 dark:border-gray-700 grid grid-cols-2 gap-4">
