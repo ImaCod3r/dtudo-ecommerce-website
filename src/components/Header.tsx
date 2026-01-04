@@ -23,8 +23,9 @@ import type { Category } from "../types";
 import { getAdress } from "../services/gps";
 
 // Contexts
+// Contexts
 import { useCart } from "../context/CartContext";
-import { useLocation } from "../context/LocationContext";
+import { useGeolocationPermission } from "../hooks/useGeolocationPermission";
 
 function Header() {
     const navigate = useNavigate();
@@ -39,20 +40,30 @@ function Header() {
     const [address, setAddress] = useState("");
 
     const { totalItems } = useCart();
-    const { location } = useLocation();
+    const { location, getLocation } = useGeolocationPermission();
+
+    // Tentar pegar a localização ao carregar
+    useEffect(() => {
+        getLocation();
+    }, []); // Executa apenas uma vez ao montar
 
     const loadAdress = async () => {
         if (!location?.coords) return;
         const { latitude, longitude } = location.coords;
 
-        const address = await getAdress(latitude, longitude);
-        console.log(address);
-        setAddress(address.display_name);
+        try {
+            const address = await getAdress(latitude, longitude);
+            setAddress(address.display_name);
+        } catch (error) {
+            console.error("Erro ao carregar endereço:", error);
+        }
     };
 
     useEffect(() => {
-        loadAdress();
-    }, [location?.coords]);
+        if (location?.coords) {
+            loadAdress();
+        }
+    }, [location]);
 
 
     useEffect(() => {
@@ -132,10 +143,10 @@ function Header() {
                     </form>
 
                     {/* Location */}
-                    <div className="flex group items-center gap-1 md:gap-2 max-w-[120px] md:max-w-[150px] cursor-pointer">
-                        <Globe className="w-5 h-5 md:w-6 md:h-6 text-gray-700 group-hover:text-[#028dfe] transition-colors shrink-0" />
-                        <span className="font-bold text-left text-[10px] md:text-xs group-hover:text-[#028dfe] transition-colors leading-tight">
-                            {address}
+                    <div className="hidden mr-[-100px] md:flex group items-center gap-2 cursor-pointer max-w-[200px]">
+                        <Globe className="w-6 h-6 text-gray-700 group-hover:text-[#028dfe] transition-colors shrink-0" />
+                        <span className="font-bold text-left text-xs group-hover:text-[#028dfe] transition-colors leading-tight truncate">
+                            {address || "Localização não encontrada"}
                         </span>
                     </div>
 

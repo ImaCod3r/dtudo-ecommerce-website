@@ -1,17 +1,17 @@
-import { BriefcaseBusiness, ArrowLeft } from 'lucide-react';
+import { TrendingUp, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-function Services() {
+function BestSellers() {
     const navigate = useNavigate();
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
             <div className="bg-blue-50 p-6 rounded-full mb-6 animate-pulse">
-                <BriefcaseBusiness className="w-16 h-16 text-[#028DFE]" />
+                <TrendingUp className="w-16 h-16 text-[#028DFE]" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">Serviços</h1>
+            <h1 className="text-4xl font-bold text-gray-800 mb-4">Mais Vendidos</h1>
             <p className="text-lg text-gray-600 mb-8 max-w-md">
-                Estamos a preparar algo incrível para si. Esta página estará disponível brevemente.
+                Os produtos mais procurados aparecerão aqui. Esta página estará disponível brevemente.
             </p>
             <button
                 onClick={() => navigate('/')}
@@ -24,4 +24,4 @@ function Services() {
     );
 }
 
-export default Services;
+export default BestSellers;

@@ -48,12 +48,26 @@ export interface CreateOrder {
 }
 
 export interface Order {
-  id: string;
+  id: number;
+  public_id: string;
+  user_id: string;
+  address_id: number;
+  phone_number: string;
   total_price: number;
-  items: CartItem[];
-  address: Address;
+  items: OrderItem[];
   createdAt: string;
-  status: 'Pendente' | 'Confirmado' | 'Entregue' | 'Cancelado';
+  status: string;
+}
+
+export interface OrderItem {
+  id: number;
+  category: string;
+  image: string;
+  name: string;
+  order_id: string;
+  price: number;
+  product_public_id: string;
+  quantity: number;
 }
 
 export interface Address {

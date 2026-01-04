@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, MapPin, Settings, LogOut, ChevronRight, ShoppingBag, Home, Trash2, Loader2 } from 'lucide-react';
+import { Package, MapPin, Settings, LogOut, ChevronRight, ShoppingBag, Home, Trash2, Loader2, X, Phone, Calendar, CreditCard } from 'lucide-react';
 
 // Services
 import { getUserOrders } from '../services/order';
@@ -15,6 +15,7 @@ import { formatPrice } from '../utils/formatPrice';
 
 // Types
 import type { Order, Address } from '../types';
+import { BASE_URL } from '../api/axios';
 
 function Profile() {
     const { user, logout } = useAuth();
@@ -25,6 +26,7 @@ function Profile() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
     const fetchOrders = async () => {
         try {
@@ -194,14 +196,14 @@ function Profile() {
                                 </div>
                             ) : (
                                 orders?.map((order) => (
-                                    <div key={order.id} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between group hover:border-[#008cff]/30 transition-all cursor-pointer">
+                                    <div key={order.id} onClick={() => setSelectedOrder(order)} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between group hover:border-[#008cff]/30 transition-all cursor-pointer">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 bg-gray-50 dark:bg-gray-900 rounded-2xl flex items-center justify-center text-[#008cff]">
                                                 <Package className="w-6 h-6" />
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-gray-900 dark:text-white">{order.id}</span>
+                                                    <span className="font-bold text-gray-900 dark:text-white">Pedido #{order.id}</span>
                                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${order.status === 'Entregue'
                                                         ? 'bg-green-50 dark:bg-green-900/40 text-green-600 dark:text-green-400'
                                                         : 'bg-orange-50 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400'
@@ -213,7 +215,13 @@ function Profile() {
                                         </div>
                                         <div className="text-right">
                                             <p className="text-lg font-bold text-gray-900 dark:text-white">{formatPrice(order.total_price)}</p>
-                                            <button className="text-xs font-bold text-[#008cff] opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedOrder(order);
+                                                }}
+                                                className="text-xs font-bold text-[#008cff] opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
                                                 Ver Detalhes
                                             </button>
                                         </div>
@@ -277,6 +285,115 @@ function Profile() {
                     )}
                 </div>
             </div>
+
+            {/* Order Details Modal */}
+            {
+                selectedOrder && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
+                            <div className="sticky top-0 bg-white dark:bg-gray-800 p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between z-10">
+                                <div>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Detalhes do Pedido</h3>
+                                    <p className="text-sm text-gray-500">#{selectedOrder.public_id || selectedOrder.id}</p>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedOrder(null)}
+                                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                                >
+                                    <X className="w-6 h-6 text-gray-500" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-8">
+                                {/* Order Info Stats */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
+                                        <Calendar className="w-5 h-5 text-[#008cff] mb-2" />
+                                        <p className="text-xs text-gray-500 mb-1">Data</p>
+                                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                                            {new Date(selectedOrder.createdAt).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
+                                        <CreditCard className="w-5 h-5 text-[#008cff] mb-2" />
+                                        <p className="text-xs text-gray-500 mb-1">Total</p>
+                                        <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                            {formatPrice(selectedOrder.total_price)}
+                                        </p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
+                                        <Package className="w-5 h-5 text-[#008cff] mb-2" />
+                                        <p className="text-xs text-gray-500 mb-1">Status</p>
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full inline-block ${selectedOrder.status === 'Entregue'
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                            : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                                            }`}>
+                                            {selectedOrder.status}
+                                        </span>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
+                                        <Phone className="w-5 h-5 text-[#008cff] mb-2" />
+                                        <p className="text-xs text-gray-500 mb-1">Contato</p>
+                                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                                            {selectedOrder.phone_number}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Items List */}
+                                <div>
+                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Itens do Pedido</h4>
+                                    <div className="space-y-4">
+                                        {selectedOrder.items.map((item) => (
+                                            <div key={item.id} className="flex gap-4 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 hover:border-[#008cff]/20 transition-colors">
+                                                <div className="w-20 h-20 bg-gray-100 dark:bg-gray-900 rounded-xl overflow-hidden shrink-0">
+                                                    <img
+                                                        src={`${BASE_URL}/${item.image}`}
+                                                        alt={item.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex justify-between items-start gap-4">
+                                                        <div>
+                                                            <p className="text-xs text-[#008cff] font-bold mb-1">{item.category}</p>
+                                                            <h5 className="font-bold text-gray-900 dark:text-white line-clamp-2">{item.name}</h5>
+                                                        </div>
+                                                        <p className="font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                                                            {formatPrice(item.price)}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-4 mt-2">
+                                                        <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg">
+                                                            Qtd: {item.quantity}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Order Summary */}
+                                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-2xl p-6">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-gray-500">Subtotal</span>
+                                        <span className="font-bold text-gray-900 dark:text-white">{formatPrice(selectedOrder.total_price)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-gray-500">Frete</span>
+                                        <span className="text-green-500 font-bold">Grátis</span>
+                                    </div>
+                                    <div className="border-t border-gray-200 dark:border-gray-600 pt-4 flex justify-between items-center">
+                                        <span className="font-bold text-lg text-gray-900 dark:text-white">Total</span>
+                                        <span className="font-bold text-xl text-[#008cff]">{formatPrice(selectedOrder.total_price)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
         </div>
     );
 }

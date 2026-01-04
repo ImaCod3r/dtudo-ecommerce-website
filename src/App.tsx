@@ -19,6 +19,9 @@ import Cart from './pages/Cart';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
 import Checkout from './pages/Checkout';
+import News from './pages/News';
+import Services from './pages/Services';
+import BestSellers from './pages/BestSellers';
 
 
 function App() {
@@ -47,6 +50,9 @@ function App() {
                             <Route path="/produto/:public_id" element={<ProductDetails />} />
                             <Route path="/cart" element={<Cart />} />
                             <Route path="/checkout" element={<Checkout />} />
+                            <Route path="/novidades" element={<News />} />
+                            <Route path="/servicos" element={<Services />} />
+                            <Route path="/mais-vendidos" element={<BestSellers />} />
                           </Routes>
                         </main>
                         <Footer />
