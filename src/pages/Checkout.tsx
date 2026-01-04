@@ -8,7 +8,7 @@ import { useAlert } from '../context/AlertContext';
 import { createOrder } from '../services/order';
 import { BASE_URL } from '../api/axios';
 
-import { Truck, Phone, MapPin, CheckCircle2, Loader2, Map as MapIcon, X } from 'lucide-react';
+import { Truck, Phone, MapPin, CheckCircle2, Loader2, Map as MapIcon, X, Search, Locate } from 'lucide-react';
 
 // Components
 import Back from '../components/Back';
@@ -46,6 +46,8 @@ function Checkout() {
     address: '',
     phone: ''
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   const total = subtotal + 1500 + (subtotal * 0.1);
 
@@ -152,17 +154,66 @@ function Checkout() {
     }
   };
 
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`);
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const { lat, lon } = data[0];
+        const newPos: [number, number] = [parseFloat(lat), parseFloat(lon)];
+
+        if (mapInstanceRef.current && markerRef.current) {
+          mapInstanceRef.current.setView(newPos, 16);
+          markerRef.current.setLatLng(newPos);
+        }
+      } else {
+        showError('Local não encontrado');
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      showError('Erro ao buscar local');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleLocateMe = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const userPos: [number, number] = [position.coords.latitude, position.coords.longitude];
+        if (mapInstanceRef.current && markerRef.current) {
+          mapInstanceRef.current.setView(userPos, 16);
+          markerRef.current.setLatLng(userPos);
+        }
+      }, (error) => {
+        console.error("Geolocation error:", error);
+        showError('Não foi possível obter sua localização');
+      });
+    } else {
+      showError('Geolocalização não suportada pelo seu navegador');
+    }
+  };
+
   if (cart.length === 0 && !isOrdered) {
     navigate('/cart');
     return null;
   }
 
   if (isOrdered) {
+    setTimeout(() => {
+      navigate('/profile');
+    }, 3000);
+
     return (
       <div className="max-w-7xl mx-auto px-4 py-32 flex flex-col items-center justify-center text-center">
         <CheckCircle2 className="w-20 h-20 text-green-500 mb-6 animate-bounce" />
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Pedido Confirmado!</h1>
-        <p className="text-gray-500 mb-8 max-w-md">Obrigado pela sua compra. Enviamos um e-mail de confirmação para o seu endereço cadastrado.</p>
+        <p className="text-gray-500 mb-8 max-w-md">Obrigado pela sua compra. Enviamos uma SMS de confirmação para o seu telefone cadastrado.</p>
         <div className="text-sm text-gray-400">Redirecionando para seus pedidos...</div>
       </div>
     );
@@ -318,6 +369,44 @@ function Checkout() {
                 <span className="bg-gray-900/90 text-white text-[9px] sm:text-[10px] font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-lg backdrop-blur-md uppercase tracking-widest border border-white/10 text-center">
                   Mova o marcador ou toque para escolher
                 </span>
+              </div>
+
+              {/* Map Controls */}
+              <div className="absolute top-16 left-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+                <form onSubmit={handleSearch} className="pointer-events-auto w-full max-w-md mx-auto relative group">
+                  <div className="absolute inset-0 bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-2xl -m-1 group-focus-within:bg-[#008cff]/20 transition-all duration-300"></div>
+                  <div className="relative flex items-center bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Buscar endereço..."
+                      className="flex-1 px-4 py-3 bg-transparent outline-none text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSearching}
+                      className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border-l border-gray-100 dark:border-gray-700 transition-colors"
+                    >
+                      {isSearching ? (
+                        <Loader2 className="w-4 h-4 text-[#008cff] animate-spin" />
+                      ) : (
+                        <Search className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div className="absolute bottom-6 right-4 z-50 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={handleLocateMe}
+                  className="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:text-[#008cff] active:scale-95 transition-all"
+                  title="Minha Localização"
+                >
+                  <Locate className="w-5 h-5" />
+                </button>
               </div>
             </div>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, MapPin, Settings, LogOut, ChevronRight, ShoppingBag, Home, Trash2 } from 'lucide-react';
+import { Package, MapPin, Settings, LogOut, ChevronRight, ShoppingBag, Home, Trash2, Loader2 } from 'lucide-react';
 
 // Services
 import { getUserOrders } from '../services/order';
@@ -24,6 +24,7 @@ function Profile() {
     const [activeSection, setActiveSection] = useState<'orders' | 'addresses'>('orders');
     const [orders, setOrders] = useState<Order[]>([]);
     const [addresses, setAddresses] = useState<Address[]>([]);
+    const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
 
     const fetchOrders = async () => {
         try {
@@ -46,30 +47,45 @@ function Profile() {
     };
 
     const fetchAddresses = async () => {
+        setIsLoadingAddresses(true);
         try {
             const data = await getAddresses();
-            setAddresses(data?.addresses);
+
+            if (!data) {
+                showError('Nenhum endereço encontrado');
+                setAddresses([]);
+                return;
+            }
+            setAddresses(Array.isArray(data?.addresses) ? data.addresses : []);
         } catch (error) {
-            showError('Erro ao buscar endereços');
             console.error('Erro ao buscar endereços:', error);
+            setAddresses([]);
+        } finally {
+            setIsLoadingAddresses(false);
         }
     }
 
     const handleDeleteAddress = async (id: number) => {
+        const previousAddresses = [...addresses];
+        setAddresses(prev => prev.filter(addr => addr.id !== id));
+
         try {
             await deleteAddress(id);
             showSuccess('Endereço excluído com sucesso');
-            fetchAddresses();
         } catch (error) {
+            setAddresses(previousAddresses);
             showError('Erro ao excluir endereço');
             console.error('Erro ao excluir endereço:', error);
         }
     }
 
     useEffect(() => {
-        fetchOrders();
-        fetchAddresses();
-    }, []);
+        if (activeSection === 'orders') {
+            fetchOrders();
+        } else if (activeSection === 'addresses') {
+            fetchAddresses();
+        }
+    }, [activeSection]);
 
     if (!user) {
         return (
@@ -211,7 +227,12 @@ function Profile() {
                                 <MapPin className="w-5 h-5" /> Meus Endereços
                             </h2>
 
-                            {addresses.length === 0 ? (
+                            {isLoadingAddresses ? (
+                                <div className="flex flex-col items-center justify-center min-h-[200px] text-gray-400">
+                                    <Loader2 className="w-8 h-8 animate-spin mb-2 text-[#008cff]" />
+                                    <p className="text-sm">Carregando endereços...</p>
+                                </div>
+                            ) : addresses.length === 0 ? (
                                 <div className="bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-12 border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center text-center min-h-[400px] transition-all">
                                     <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 shadow-lg border-4 border-[#008cff]/10">
                                         <Home className="w-12 h-12 text-[#008cff]" />
