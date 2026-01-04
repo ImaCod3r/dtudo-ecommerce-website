@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 import { ShoppingCart, ArrowLeft, Plus, Minus } from 'lucide-react';
 
 import type { Product } from '../types';
@@ -9,6 +10,7 @@ import api, { BASE_URL } from '../api/axios';
 import Back from '../components/Back';
 
 function ProductDetails() {
+    const { addToCart } = useCart();
     const { public_id } = useParams<{ public_id: string }>();
     const navigate = useNavigate();
     const [product, setProduct] = useState<Product | null>(null);
@@ -110,6 +112,7 @@ function ProductDetails() {
 
                             <button
                                 className="flex-1 w-full py-4 flex items-center justify-center gap-4 bg-[#008cff] text-white h-16 rounded font-black text-xl hover:bg-[#007ad6] shadow-xl shadow-[#008cff]/20 active:scale-95 transition-all"
+                                onClick={() => addToCart(product, quantity)}
                             >
                                 <ShoppingCart className="w-6 h-6" /> Adicionar ao Carrinho
                             </button>

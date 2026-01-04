@@ -1,16 +1,61 @@
-import { useState } from 'react';
-import { Package, MapPin, Settings, LogOut, ChevronRight, ShoppingBag, Home } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Package, MapPin, Settings, LogOut, ChevronRight, ShoppingBag, Home, Trash2 } from 'lucide-react';
+
+// Services
+import { getUserOrders } from '../services/order';
+import { getAddresses, deleteAddress } from '../services/address';
 
 // Hooks
 import { useAuth } from '../auth/useAuth';
 import { useNavigate } from 'react-router-dom';
 
+// Utils
+import { formatPrice } from '../utils/formatPrice';
+
+// Types
+import type { Order, Address } from '../types';
+
 function Profile() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    // States
     const [activeSection, setActiveSection] = useState<'orders' | 'addresses'>('orders');
-    const orders: any[] = [];
-    const addresses: any[] = [];
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [addresses, setAddresses] = useState<Address[]>([]);
+
+    const fetchOrders = async () => {
+        try {
+            const response = await getUserOrders();
+            console.log('Orders Response:', response);
+            if (Array.isArray(response)) {
+                setOrders(response);
+            } else if (response && Array.isArray(response.orders)) {
+                setOrders(response.orders);
+            } else if (response && Array.isArray(response.data)) {
+                setOrders(response.data);
+            } else {
+                console.error('Formato de resposta inesperado:', response);
+                setOrders([]);
+            }
+        } catch (error) {
+            console.error('Erro ao buscar pedidos:', error);
+        }
+    };
+
+    const fetchAddresses = async () => {
+        const data = await getAddresses();
+        setAddresses(data?.addresses);
+    }
+
+    const handleDeleteAddress = async (id: number) => {
+        await deleteAddress(id);
+        fetchAddresses();
+    }
+
+    useEffect(() => {
+        fetchOrders();
+        fetchAddresses();
+    }, []);
 
     if (!user) {
         return (
@@ -26,15 +71,6 @@ function Profile() {
             </div>
         );
     }
-
-    const getStatusTranslation = (status: string) => {
-        switch (status) {
-            case 'Processing': return 'Processando';
-            case 'Delivered': return 'Entregue';
-            case 'Shipped': return 'Enviado';
-            default: return status;
-        }
-    };
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-8">
@@ -74,8 +110,8 @@ function Profile() {
                             <button
                                 onClick={() => setActiveSection('orders')}
                                 className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${activeSection === 'orders'
-                                        ? 'bg-[#008cff]/10 text-[#008cff] font-bold'
-                                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                    ? 'bg-[#008cff]/10 text-[#008cff] font-bold'
+                                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                                     }`}
                             >
                                 <div className="flex items-center gap-3">
@@ -86,8 +122,8 @@ function Profile() {
                             <button
                                 onClick={() => setActiveSection('addresses')}
                                 className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${activeSection === 'addresses'
-                                        ? 'bg-[#008cff]/10 text-[#008cff] font-bold'
-                                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                    ? 'bg-[#008cff]/10 text-[#008cff] font-bold'
+                                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                                     }`}
                             >
                                 <div className="flex items-center gap-3">
@@ -107,7 +143,7 @@ function Profile() {
                                 <ShoppingBag className="w-5 h-5" /> Pedidos Recentes
                             </h2>
 
-                            {orders.length === 0 ? (
+                            {orders?.length === 0 ? (
                                 <div className="bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-12 border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center text-center min-h-[400px] transition-all">
                                     <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 shadow-lg border-4 border-[#008cff]/10">
                                         <ShoppingBag className="w-12 h-12 text-[#008cff]" />
@@ -127,7 +163,7 @@ function Profile() {
                                     </button>
                                 </div>
                             ) : (
-                                orders.map((order) => (
+                                orders?.map((order) => (
                                     <div key={order.id} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between group hover:border-[#008cff]/30 transition-all cursor-pointer">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 bg-gray-50 dark:bg-gray-900 rounded-2xl flex items-center justify-center text-[#008cff]">
@@ -136,18 +172,17 @@ function Profile() {
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-bold text-gray-900 dark:text-white">{order.id}</span>
-                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${order.status === 'Delivered'
-                                                            ? 'bg-green-50 dark:bg-green-900/40 text-green-600 dark:text-green-400'
-                                                            : 'bg-orange-50 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400'
+                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${order.status === 'Entregue'
+                                                        ? 'bg-green-50 dark:bg-green-900/40 text-green-600 dark:text-green-400'
+                                                        : 'bg-orange-50 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400'
                                                         }`}>
-                                                        {getStatusTranslation(order.status)}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-gray-400">{order.date}</p>
+                                                <p className="text-xs text-gray-400">{order.createdAt}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-lg font-bold text-gray-900 dark:text-white">Kz {order.total.toLocaleString()}</p>
+                                            <p className="text-lg font-bold text-gray-900 dark:text-white">{formatPrice(order.total_price)}</p>
                                             <button className="text-xs font-bold text-[#008cff] opacity-0 group-hover:opacity-100 transition-opacity">
                                                 Ver Detalhes
                                             </button>
@@ -183,33 +218,22 @@ function Profile() {
                             ) : (
                                 addresses.map((address) => (
                                     <div key={address.id} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm group hover:border-[#008cff]/30 transition-all">
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex items-start gap-4 flex-1">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4 flex-1">
                                                 <div className="w-12 h-12 bg-gray-50 dark:bg-gray-900 rounded-2xl flex items-center justify-center text-[#008cff] shrink-0">
                                                     <MapPin className="w-6 h-6" />
                                                 </div>
+
                                                 <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <span className="font-bold text-gray-900 dark:text-white">{address.label}</span>
-                                                        {address.isDefault && (
-                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#008cff]/10 text-[#008cff]">
-                                                                Principal
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{address.street}, {address.number}</p>
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400">{address.city} - {address.state}</p>
-                                                    <p className="text-xs text-gray-400 mt-1">CEP: {address.postalCode}</p>
+                                                    <span className="font-semibold text-sm text-left text-gray-900 dark:text-white line-clamp-1">{address.name}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <button className="text-sm font-bold text-[#008cff] px-3 py-1.5 hover:bg-[#008cff]/10 rounded-lg transition-colors">
-                                                    Editar
-                                                </button>
-                                                <button className="text-sm font-bold text-red-500 px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                                                    Remover
-                                                </button>
-                                            </div>
+
+                                            <button className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all"
+                                                onClick={() => handleDeleteAddress(address.id)}
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
                                         </div>
                                     </div>
                                 ))

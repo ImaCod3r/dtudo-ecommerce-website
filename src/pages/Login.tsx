@@ -1,8 +1,10 @@
 import { GoogleLogin } from "@react-oauth/google";
 import { login } from "../services/auth";
+import { useAuth } from "../auth/useAuth";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
+    const { refreshUser } = useAuth();
     const navigate = useNavigate();
 
     return (
@@ -27,21 +29,22 @@ function Login() {
                     <div className="space-y-4">
                         <GoogleLogin onSuccess={async (response) => {
                             const token = response.credential;
-                            
+
                             if (!token) throw new Error("Token not found");
 
                             try {
                                 await login(token);
+                                await refreshUser();
                                 navigate('/');
                             } catch (error) {
                                 console.log(error);
                             }
                         }}
-                        onError={() => {
-                            console.log("error");
-                        }}
-                    />
-                </div>
+                            onError={() => {
+                                console.log("error");
+                            }}
+                        />
+                    </div>
 
                     {/* Additional Info */}
                     <div className="mt-6 text-center text-sm text-gray-500">

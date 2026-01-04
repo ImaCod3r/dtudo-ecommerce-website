@@ -47,6 +47,5 @@ export async function remove(item_id: string) {
 }
 
 export async function clear() {
-    const response = await api.delete(`/carts/clear`);
-    return response.data;
+await api.delete(`/carts/clear`);
 }

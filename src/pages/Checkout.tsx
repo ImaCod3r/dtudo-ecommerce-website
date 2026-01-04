@@ -9,7 +9,6 @@ import { BASE_URL } from '../api/axios';
 
 import { Truck, Phone, MapPin, CheckCircle2, Loader2, Map as MapIcon, X } from 'lucide-react';
 
-import type { Address } from '../types';
 // Components
 import Back from '../components/Back';
 
@@ -29,34 +28,31 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 function Checkout() {
-  const { cart, subtotal, clearCart, cartId } = useCart();
+  const { cart, subtotal, cartId } = useCart();
   const { user } = useAuth();
-  const [address, setAddress] = useState<Address | null>(null);
+  const [address, setAddress] = useState<any | null>(null);
   const navigate = useNavigate();
   const [isOrdered, setIsOrdered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const suggestionRef = useRef<HTMLDivElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
-
   const [formData, setFormData] = useState({
     address: '',
-    city: '',
     phone: ''
   });
 
   const total = subtotal + 1500 + (subtotal * 0.1);
-
+  
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user || !cartId) return;
-
+    
     setIsLoading(true);
-
+    
     const orderData = {
       items: cart,
       address: address!,
@@ -64,29 +60,15 @@ function Checkout() {
       total_price: total,
     }
 
-    console.log(orderData);
-
     try {
       await createOrder(orderData);
       setIsOrdered(true);
-      clearCart()
     } catch (error) {
       console.error("Order failed:", error);
     } finally {
       setIsLoading(false);
     }
   }
-
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   // Initialize Map
   useEffect(() => {
@@ -200,18 +182,6 @@ function Checkout() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="col-span-full">
-                <label className="block text-left text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Cidade</label>
-                <input
-                  required
-                  type="text"
-                  placeholder="Ex: Luanda"
-                  className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 px-4 focus:ring-2 focus:ring-[#008cff] outline-none dark:text-white transition-colors"
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                />
-              </div>
-
               <div className="col-span-full relative" ref={suggestionRef}>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Endereço</label>

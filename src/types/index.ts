@@ -46,11 +46,12 @@ export interface Order {
   total_price: number;
   items: CartItem[];
   address: Address;
-  user: User;
+  createdAt: string;
   status: 'Pendente' | 'Confirmado' | 'Entregue' | 'Cancelado';
 }
 
 export interface Address {
+  id: number;
   name: string;
   long: number;
   lat: number;

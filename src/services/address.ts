@@ -1,34 +1,16 @@
 import api from "../api/axios";
+import type { Address } from "../types";
 
-export interface Address {
-    id: number;
-    user_id: string;
-    city: string;
-    street: string;
-    number?: string;
-    lat?: number;
-    long?: number;
-    phone?: string;
-    created_at: string;
-    updated_at: string;
-}
-
-export interface CreateAddressData {
-    user_id: string;
-    city: string;
-    street: string;
-    number?: string;
-    lat?: number;
-    long?: number;
-    phone?: string;
-}
-
-export async function createAddress(addressData: CreateAddressData) {
-    const response = await api.post("/addresses", addressData);
+export async function createAddress(addressData: Address) {
+    const response = await api.post("/addresses/new", addressData);
     return response.data;
 }
 
-export async function getAddresses(user_id: string) {
-    const response = await api.get(`/addresses/user/${user_id}`);
+export async function getAddresses() {
+    const response = await api.get('/addresses/user');
     return response.data;
+}
+
+export async function deleteAddress(id: number) {
+    await api.delete(`/addresses/address/${id}`);
 }
