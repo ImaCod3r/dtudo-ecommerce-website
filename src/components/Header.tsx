@@ -143,7 +143,7 @@ function Header() {
                     </form>
 
                     {/* Location */}
-                    <div className="hidden mr-[-100px] md:flex group items-center gap-2 cursor-pointer max-w-[200px]">
+                    <div className="hidden md:flex group items-center gap-2 cursor-pointer max-w-[200px]">
                         <Globe className="w-6 h-6 text-gray-700 group-hover:text-[#028dfe] transition-colors shrink-0" />
                         <span className="font-bold text-left text-xs group-hover:text-[#028dfe] transition-colors leading-tight truncate">
                             {address || "Localização não encontrada"}

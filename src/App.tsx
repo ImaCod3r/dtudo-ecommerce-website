@@ -31,7 +31,7 @@ function App() {
       <AuthProvider>
         <GoogleOAuthProvider clientId={clientId}>
           <LocationProvider>
-            <AlertProvider>
+             <AlertProvider>
               <CartProvider>
                 <Router>
                   <Routes>

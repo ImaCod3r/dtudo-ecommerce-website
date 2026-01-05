@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, MapPin, Settings, LogOut, ChevronRight, ShoppingBag, Home, Trash2, Loader2, X, Phone, Calendar, CreditCard } from 'lucide-react';
+import { Package, MapPin, LogOut, ChevronRight, ShoppingBag, Home, Trash2, Loader2, X, Phone, Calendar, CreditCard } from 'lucide-react';
 
 // Services
 import { getUserOrders } from '../services/order';
@@ -31,7 +31,6 @@ function Profile() {
     const fetchOrders = async () => {
         try {
             const response = await getUserOrders();
-            console.log('Orders Response:', response);
             if (Array.isArray(response)) {
                 setOrders(response);
             } else if (response && Array.isArray(response.orders)) {
@@ -39,10 +38,10 @@ function Profile() {
             } else if (response && Array.isArray(response.data)) {
                 setOrders(response.data);
             } else {
-                console.error('Formato de resposta inesperado:', response);
                 setOrders([]);
             }
-        } catch (error) {
+        } catch (error) { 
+            if(!user) return;
             showError('Erro ao buscar pedidos');
             console.error('Erro ao buscar pedidos:', error);
         }
@@ -59,8 +58,12 @@ function Profile() {
                 return;
             }
             setAddresses(Array.isArray(data?.addresses) ? data.addresses : []);
-        } catch (error) {
+        } catch (error) { 
+            if(!user) return;
+
+            showError('Erro ao buscar endereços');
             console.error('Erro ao buscar endereços:', error);
+            
             setAddresses([]);
         } finally {
             setIsLoadingAddresses(false);
@@ -121,9 +124,6 @@ function Profile() {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button className="p-3 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                        <Settings className="w-5 h-5" />
-                    </button>
                     <button
                         onClick={logout}
                         className="p-3 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"

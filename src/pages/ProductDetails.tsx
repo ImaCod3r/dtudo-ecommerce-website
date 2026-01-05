@@ -19,7 +19,6 @@ function ProductDetails() {
     const fetchProduct = async () => {
         try {
             const response = await api.get(`/products/${public_id}`);
-            console.log(response.data.product);
             setProduct(response.data.product);
         } catch (error) {
             console.error(error);
@@ -56,7 +55,7 @@ function ProductDetails() {
                     <div className="mt-auto pt-8 border-t border-gray-50 dark:border-gray-700 grid grid-cols-2 gap-4">
                         <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50">
                             <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Envio</p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">Para toda Angola</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-white">Para Luanda e Cabinda</p>
                         </div>
                         <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50">
                             <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Devolução</p>
@@ -65,7 +64,6 @@ function ProductDetails() {
                     </div>
 
                 </div>
-
 
                 {/* Info */}
                 <div className="flex flex-col py-4">
