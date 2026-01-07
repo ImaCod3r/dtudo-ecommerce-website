@@ -23,6 +23,13 @@ import News from './pages/News';
 import Services from './pages/Services';
 import BestSellers from './pages/BestSellers';
 import Onboarding from './pages/Onboarding';
+import About from './pages/About';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import Shipping from './pages/Shipping';
+import Returns from './pages/Returns';
+import FAQ from './pages/FAQ';
+import Contact from './pages/Contact';
 import PhoneAlert from './components/PhoneAlert';
 import PushNotificationDialog from './components/PushNotificationDialog';
 
@@ -58,6 +65,13 @@ function App() {
                             <Route path="/novidades" element={<News />} />
                             <Route path="/servicos" element={<Services />} />
                             <Route path="/mais-vendidos" element={<BestSellers />} />
+                            <Route path="/sobre-nos" element={<About />} />
+                            <Route path="/termos" element={<Terms />} />
+                            <Route path="/privacidade" element={<Privacy />} />
+                            <Route path="/envio" element={<Shipping />} />
+                            <Route path="/devolucoes" element={<Returns />} />
+                            <Route path="/faq" element={<FAQ />} />
+                            <Route path="/contato" element={<Contact />} />
                           </Routes>
                         </main>
                         <Footer />
