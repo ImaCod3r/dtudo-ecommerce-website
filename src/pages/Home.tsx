@@ -280,7 +280,7 @@ function Home() {
                 </div>
             )}
 
-            <Modal isOpen={isModalOpen}>
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <div className="flex flex-col items-center justify-center gap-4">
                     <div className="bg-[#008cff] p-6 rounded-full flex items-center justify-center">
                         <MapIcon size={80} color="#fff" />
