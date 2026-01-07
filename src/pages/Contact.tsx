@@ -1,11 +1,34 @@
 import { Mail, Phone, MapPin, Send, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { SEO } from '../components/SEO';
 
 function Contact() {
     const navigate = useNavigate();
 
     return (
         <div className="container mx-auto px-4 py-20">
+            <SEO
+                title="Fale Conosco"
+                description="Entre em contacto com a Dtudo Store. Estamos prontos para ajudar por telefone, WhatsApp ou e-mail."
+                schema={{
+                    "@context": "https://schema.org",
+                    "@type": "ContactPage",
+                    "name": "Fale Conosco - Dtudo Shop",
+                    "url": window.location.href,
+                    "mainEntity": {
+                        "@type": "Organization",
+                        "name": "Dtudo Shop",
+                        "telephone": "+244 929 087 734",
+                        "email": "atendimento@dtudo.shop",
+                        "contactPoint": {
+                            "@type": "ContactPoint",
+                            "telephone": "+244 929 087 734",
+                            "contactType": "customer service",
+                            "availableLanguage": "Portuguese"
+                        }
+                    }
+                }}
+            />
             <div className="max-w-6xl mx-auto">
                 <button
                     onClick={() => navigate(-1)}

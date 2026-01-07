@@ -1,11 +1,16 @@
 import { FileText, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { SEO } from '../components/SEO';
 
 function Terms() {
     const navigate = useNavigate();
 
     return (
         <div className="container mx-auto px-4 py-20">
+            <SEO
+                title="Termos de Serviço"
+                description="Leia os Termos de Serviço da Dtudo Store. Condições de uso, política de preços e pagamentos."
+            />
             <div className="max-w-3xl mx-auto text-left">
                 <button
                     onClick={() => navigate(-1)}

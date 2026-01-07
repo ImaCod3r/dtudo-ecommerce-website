@@ -1,11 +1,16 @@
 import { ShieldCheck, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { SEO } from '../components/SEO';
 
 function Privacy() {
     const navigate = useNavigate();
 
     return (
         <div className="container mx-auto px-4 py-20">
+            <SEO
+                title="Política de Privacidade"
+                description="Saiba como a Dtudo Store recolhe, usa e protege seus dados pessoais."
+            />
             <div className="max-w-3xl mx-auto text-left">
                 <button
                     onClick={() => navigate(-1)}

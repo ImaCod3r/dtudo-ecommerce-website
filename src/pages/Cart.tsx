@@ -7,6 +7,7 @@ import { BASE_URL } from '../api/axios';
 
 // Components
 import Back from '../components/Back';
+import { SEO } from '../components/SEO';
 
 function Cart() {
     const { cart, removeFromCart, updateQuantity, subtotal } = useCart();
@@ -17,6 +18,10 @@ function Cart() {
     if (cart.length === 0) {
         return (
             <div className="max-w-7xl mx-auto px-4 py-20 flex flex-col items-center justify-center text-center">
+                <SEO
+                    title="Seu Carrinho Vazio"
+                    description="Seu carrinho de compras está vazio. Explore nossa loja e encontre os melhores produtos."
+                />
                 <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 text-gray-400">
                     <ShoppingBag className="w-8 h-8 sm:w-10 sm:h-10" />
                 </div>
@@ -31,6 +36,10 @@ function Cart() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 pb-12">
+            <SEO
+                title="Carrinho de Compras"
+                description="Revise seus itens, calcule o frete e finalize sua compra com segurança na Dtudo Store."
+            />
             <Back />
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6 sm:mb-8 mt-4">Carrinho de Compras</h1>
 
@@ -40,7 +49,7 @@ function Cart() {
                     {cart.map((item: CartItem) => (
                         <div key={item.id} className="group relative bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-3xl border border-gray-100 dark:border-gray-700 flex gap-3 sm:gap-4 items-center shadow-sm hover:shadow-md transition-all">
                             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-900 shrink-0">
-                                <img src={`${BASE_URL}/${item.product.image_url}`} alt={item.product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                <img src={item.product.image_url.startsWith('http') ? item.product.image_url : `${BASE_URL}/${item.product.image_url}`} alt={item.product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                             </div>
 
                             <div className="flex-1 min-w-0 pr-8">

@@ -48,6 +48,21 @@ function ProductDetails() {
                 description={product.description}
                 image={product.image_url.startsWith('http') ? product.image_url : `${BASE_URL}/${product.image_url}`}
                 type="product"
+                schema={{
+                    "@context": "https://schema.org",
+                    "@type": "Product",
+                    "name": product.name,
+                    "image": product.image_url.startsWith('http') ? product.image_url : `${BASE_URL}/${product.image_url}`,
+                    "description": product.description,
+                    "sku": product.id,
+                    "offers": {
+                        "@type": "Offer",
+                        "price": product.price,
+                        "priceCurrency": "AOA",
+                        "availability": "https://schema.org/InStock",
+                        "url": window.location.href
+                    }
+                }}
             />
             {/* Back Button */}
             <Back />

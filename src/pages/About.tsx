@@ -1,11 +1,29 @@
 import { Info, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { SEO } from '../components/SEO';
 
 function About() {
     const navigate = useNavigate();
 
     return (
         <div className="container mx-auto px-4 py-20">
+            <SEO
+                title="Sobre Nós"
+                description="Conheça a Dtudo Store, sua loja online de confiança em Angola. Missão, valores e compromisso com a qualidade."
+                schema={{
+                    "@context": "https://schema.org",
+                    "@type": "Store",
+                    "name": "Dtudo Shop",
+                    "url": window.location.origin,
+                    "description": "A sua loja online favorita com entrega rápida em toda Angola.",
+                    "telephone": "+244 929 087 734",
+                    "address": {
+                        "@type": "PostalAddress",
+                        "addressLocality": "Luanda",
+                        "addressCountry": "AO"
+                    }
+                }}
+            />
             <div className="max-w-4xl">
                 <button
                     onClick={() => navigate(-1)}

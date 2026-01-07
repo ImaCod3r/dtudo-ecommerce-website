@@ -1,5 +1,6 @@
 import { HelpCircle, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { SEO } from '../components/SEO';
 
 const FAQS = [
     {
@@ -27,8 +28,26 @@ const FAQS = [
 function FAQ() {
     const navigate = useNavigate();
 
+    const faqSchema = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": FAQS.map(faq => ({
+            "@type": "Question",
+            "name": faq.q,
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": faq.a
+            }
+        }))
+    };
+
     return (
         <div className="container mx-auto px-4 py-20">
+            <SEO
+                title="Perguntas Frequentes (FAQ)"
+                description="Respostas às dúvidas mais comuns sobre pagamentos, entregas, garantias e devoluções na Dtudo Store."
+                schema={faqSchema}
+            />
             <div className="max-w-4xl">
                 <button
                     onClick={() => navigate(-1)}

@@ -6,6 +6,7 @@ interface SEOProps {
     image?: string;
     url?: string;
     type?: string;
+    schema?: object;
 }
 
 export function SEO({
@@ -13,7 +14,8 @@ export function SEO({
     description = "A sua loja online favorita com entrega rápida em toda Angola.",
     image = "/icon-512x512.png",
     url,
-    type = "website"
+    type = "website",
+    schema
 }: SEOProps) {
     const siteTitle = "Dtudo Shop";
     const fullTitle = `${title} | ${siteTitle}`;
@@ -25,6 +27,7 @@ export function SEO({
             {/* Standard Metadata */}
             <title>{fullTitle}</title>
             <meta name="description" content={description} />
+            <link rel="canonical" href={currentUrl} />
 
             {/* Open Graph / Facebook */}
             <meta property="og:type" content={type} />
@@ -40,6 +43,13 @@ export function SEO({
             <meta name="twitter:title" content={fullTitle} />
             <meta name="twitter:description" content={description} />
             <meta name="twitter:image" content={fullImage} />
+
+            {/* Structured Data (JSON-LD) */}
+            {schema && (
+                <script type="application/ld+json">
+                    {JSON.stringify(schema)}
+                </script>
+            )}
         </Helmet>
     );
 }

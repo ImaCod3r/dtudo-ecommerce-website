@@ -13,6 +13,7 @@ import { Truck, Phone, MapPin, CheckCircle2, Loader2, Map as MapIcon, X, Search,
 
 // Components
 import Back from '../components/Back';
+import { SEO } from '../components/SEO';
 
 // Leaflet
 import 'leaflet/dist/leaflet.css';
@@ -303,6 +304,7 @@ function Checkout() {
 
     return (
       <div className="max-w-7xl mx-auto px-4 py-32 flex flex-col items-center justify-center text-center">
+        <SEO title="Pedido Confirmado" />
         <CheckCircle2 className="w-20 h-20 text-green-500 mb-6 animate-bounce" />
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Pedido Confirmado!</h1>
         <p className="text-gray-500 mb-8 max-w-md">Obrigado pela sua compra. Enviaremos uma notificação para o seu telefone cadastrado.</p>
@@ -313,6 +315,10 @@ function Checkout() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <SEO
+        title="Finalizar Compra"
+        description="Complete seu pedido de forma segura e rápida na Dtudo Store. Aceitamos diversos métodos de pagamento."
+      />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Formulário */}
         <div>
