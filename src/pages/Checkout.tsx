@@ -289,7 +289,7 @@ function Checkout() {
       <div className="max-w-7xl mx-auto px-4 py-32 flex flex-col items-center justify-center text-center">
         <CheckCircle2 className="w-20 h-20 text-green-500 mb-6 animate-bounce" />
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Pedido Confirmado!</h1>
-        <p className="text-gray-500 mb-8 max-w-md">Obrigado pela sua compra. Enviamos uma SMS de confirmação para o seu telefone cadastrado.</p>
+        <p className="text-gray-500 mb-8 max-w-md">Obrigado pela sua compra. Enviaremos uma notificação para o seu telefone cadastrado.</p>
         <div className="text-sm text-gray-400">Redirecionando para seus pedidos...</div>
       </div>
     );

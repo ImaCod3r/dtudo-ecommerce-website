@@ -24,11 +24,13 @@ import Services from './pages/Services';
 import BestSellers from './pages/BestSellers';
 import Onboarding from './pages/Onboarding';
 import PhoneAlert from './components/PhoneAlert';
+import PushNotificationDialog from './components/PushNotificationDialog';
 
 function App() {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   return (
     <>
+      <PushNotificationDialog />
       <AuthProvider>
         <GoogleOAuthProvider clientId={clientId}>
           <LocationProvider>

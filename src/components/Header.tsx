@@ -24,11 +24,13 @@ import { getAdress } from "../services/gps";
 
 // Contexts
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../auth/useAuth";
 import { useGeolocationPermission } from "../hooks/useGeolocationPermission";
 import { useDebounce } from "../hooks/useDebounce";
 
 function Header() {
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
@@ -175,7 +177,7 @@ function Header() {
                         </span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <span className="text-xs md:text-sm font-medium">Entregas para toda a cidade de Cabinda.</span>
+                        <span className="text-xs md:text-sm font-medium">Entregas para toda a cidade de Luanda e Cabinda.</span>
                     </div>
                 </div>
             </div>
@@ -254,9 +256,19 @@ function Header() {
                     {/* Icons - Desktop */}
                     <div className="hidden md:flex items-center gap-6">
                         <button className="relative group cursor-pointer" onClick={() => navigate('/profile')}>
-                            <User className="w-6 h-6 text-gray-700 group-hover:text-[#028dfe] transition-colors" />
+                            {user?.avatar ? (
+                                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent group-hover:border-[#028dfe] transition-all">
+                                    <img
+                                        src={user.avatar.startsWith('http') ? user.avatar : `${BASE_URL}/${user.avatar}`}
+                                        alt={user.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            ) : (
+                                <User className="w-6 h-6 text-gray-700 group-hover:text-[#028dfe] transition-colors" />
+                            )}
                             <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                Conta
+                                {user ? 'Minha Conta' : 'Entrar'}
                             </span>
                         </button>
                         <button className="relative group cursor-pointer" onClick={() => navigate('/cart')}>
@@ -435,8 +447,18 @@ function Header() {
                                 navigate('/profile');
                                 setIsMenuOpen(false);
                             }}>
-                            <User className="w-6 h-6 text-gray-700" />
-                            <span className="text-xs text-gray-600">Conta</span>
+                            {user?.avatar ? (
+                                <div className="w-6 h-6 rounded-full overflow-hidden border border-gray-200">
+                                    <img
+                                        src={user.avatar.startsWith('http') ? user.avatar : `${BASE_URL}/${user.avatar}`}
+                                        alt={user.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            ) : (
+                                <User className="w-6 h-6 text-gray-700" />
+                            )}
+                            <span className="text-xs text-gray-600">{user ? 'Perfil' : 'Entrar'}</span>
                         </button>
                         <button
                             className="flex flex-col items-center gap-1 relative"

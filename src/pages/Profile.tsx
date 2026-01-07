@@ -15,7 +15,7 @@ import { updateUser } from '../services/auth';
 import { formatPrice } from '../utils/formatPrice';
 
 // Components
-import PushNotificationToggle from '../components/PushNotificationToggle';
+
 
 // Types
 import type { Order, Address } from '../types';
@@ -144,8 +144,16 @@ function Profile() {
         <div className="max-w-4xl mx-auto px-4 py-8">
             {/* User Header */}
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col md:flex-row items-center gap-8 mb-8 transition-colors duration-300">
-                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#008cff]/20 shadow-lg">
-                    <img src={user?.avatar} alt={user?.name} className="w-full h-full object-cover" />
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#008cff]/20 shadow-lg flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+                    {user?.avatar ? (
+                        <img
+                            src={user.avatar.startsWith('http') ? user.avatar : `${BASE_URL}/${user.avatar}`}
+                            alt={user?.name}
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <UserIcon className="w-12 h-12 text-gray-400" />
+                    )}
                 </div>
                 <div className="flex-1 text-center md:text-left">
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{user?.name}</h1>
@@ -217,11 +225,6 @@ function Profile() {
                                 <ChevronRight className="w-4 h-4" />
                             </button>
                         </nav>
-                    </div>
-
-                    {/* Push Notifications Section */}
-                    <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-                        <PushNotificationToggle />
                     </div>
                 </div>
 
@@ -454,94 +457,106 @@ function Profile() {
             }
 
             {/* Profile Edit Modal */}
-            {isEditingProfile && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
-                        <div className="p-8">
-                            <div className="flex justify-between items-center mb-8">
-                                <h3 className="text-2xl font-black text-gray-900 dark:text-white">Editar Perfil</h3>
-                                <button
-                                    onClick={() => setIsEditingProfile(false)}
-                                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                                >
-                                    <X className="w-6 h-6 text-gray-400" />
-                                </button>
+            {
+                isEditingProfile && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+                        <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                            <div className="p-8">
+                                <div className="flex justify-between items-center mb-8">
+                                    <h3 className="text-2xl font-black text-gray-900 dark:text-white">Editar Perfil</h3>
+                                    <button
+                                        onClick={() => setIsEditingProfile(false)}
+                                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                                    >
+                                        <X className="w-6 h-6 text-gray-400" />
+                                    </button>
+                                </div>
+
+                                <form onSubmit={handleUpdateProfile} className="space-y-6">
+                                    {/* Avatar Upload */}
+                                    <div className="flex flex-col items-center gap-4 mb-6">
+                                        <div className="relative group">
+                                            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#008cff]/20 flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+                                                {editForm.avatar ? (
+                                                    <img
+                                                        src={URL.createObjectURL(editForm.avatar)}
+                                                        alt="Preview"
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : user?.avatar ? (
+                                                    <img
+                                                        src={user.avatar.startsWith('http') ? user.avatar : `${BASE_URL}/${user.avatar}`}
+                                                        alt="Avatar"
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <UserIcon className="w-12 h-12 text-gray-400" />
+                                                )}
+                                            </div>
+                                            <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                                                <Camera className="w-6 h-6" />
+                                                <input
+                                                    type="file"
+                                                    className="hidden"
+                                                    accept="image/*"
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) setEditForm({ ...editForm, avatar: file });
+                                                    }}
+                                                />
+                                            </label>
+                                        </div>
+                                        <p className="text-xs text-gray-400">Toque na imagem para mudar</p>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Nome Completo</label>
+                                            <div className="relative">
+                                                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                                <input
+                                                    type="text"
+                                                    value={editForm.name}
+                                                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                                    className="w-full bg-gray-50 dark:bg-gray-900/50 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-[#008cff] outline-none text-gray-900 dark:text-white font-medium"
+                                                    placeholder="Seu nome"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Telefone (WhatsApp)</label>
+                                            <div className="relative">
+                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                                <input
+                                                    type="tel"
+                                                    value={editForm.phone}
+                                                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                                    className="w-full bg-gray-50 dark:bg-gray-900/50 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-[#008cff] outline-none text-gray-900 dark:text-white font-medium"
+                                                    placeholder="900 000 000"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={isUpdating}
+                                        className="w-full bg-[#008cff] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#007ad6] transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-[#008cff]/20 mt-8"
+                                    >
+                                        {isUpdating ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            'Salvar Alterações'
+                                        )}
+                                    </button>
+                                </form>
                             </div>
-
-                            <form onSubmit={handleUpdateProfile} className="space-y-6">
-                                {/* Avatar Upload */}
-                                <div className="flex flex-col items-center gap-4 mb-6">
-                                    <div className="relative group">
-                                        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#008cff]/20">
-                                            <img
-                                                src={editForm.avatar ? URL.createObjectURL(editForm.avatar) : user?.avatar}
-                                                alt="Avatar"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                        <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                                            <Camera className="w-6 h-6" />
-                                            <input
-                                                type="file"
-                                                className="hidden"
-                                                accept="image/*"
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) setEditForm({ ...editForm, avatar: file });
-                                                }}
-                                            />
-                                        </label>
-                                    </div>
-                                    <p className="text-xs text-gray-400">Toque na imagem para mudar</p>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Nome Completo</label>
-                                        <div className="relative">
-                                            <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                            <input
-                                                type="text"
-                                                value={editForm.name}
-                                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                                className="w-full bg-gray-50 dark:bg-gray-900/50 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-[#008cff] outline-none text-gray-900 dark:text-white font-medium"
-                                                placeholder="Seu nome"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Telefone (WhatsApp)</label>
-                                        <div className="relative">
-                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                            <input
-                                                type="tel"
-                                                value={editForm.phone}
-                                                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                                                className="w-full bg-gray-50 dark:bg-gray-900/50 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-[#008cff] outline-none text-gray-900 dark:text-white font-medium"
-                                                placeholder="900 000 000"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={isUpdating}
-                                    className="w-full bg-[#008cff] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#007ad6] transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-[#008cff]/20 mt-8"
-                                >
-                                    {isUpdating ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        'Salvar Alterações'
-                                    )}
-                                </button>
-                            </form>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }
 
