@@ -6,7 +6,7 @@ export async function createOrder(orderData: CreateOrder) {
     return response.data;
 }
 
-export async function getUserOrders() {
-    const response = await api.get("/orders/user");
+export async function getUserOrders(page: number = 1) {
+    const response = await api.get(`/orders/user?page=${page}`);
     return response.data;
 }

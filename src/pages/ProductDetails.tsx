@@ -45,11 +45,11 @@ function ProductDetails() {
             {/* Back Button */}
             <Back />
 
-            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white dark:bg-gray-800 rounded-[3rem] p-2 lg:p-12 transition-colors duration-300">
+            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 bg-white dark:bg-gray-800 rounded-3xl lg:rounded-[3rem] p-6 lg:p-12 transition-colors duration-300">
                 {/* Product Image */}
                 <div>
-                    <div className="aspect-video rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                        <img src={`${BASE_URL}/${product.image_url}`} alt={product.name} className="w-full h-full object-contain" />
+                    <div className="aspect-square sm:aspect-video rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 shadow-inner">
+                        <img src={`${BASE_URL}/${product.image_url}`} alt={product.name} className="w-full h-full object-contain p-4 sm:p-8" />
                     </div>
 
                     <div className="mt-auto pt-8 border-t border-gray-50 dark:border-gray-700 grid grid-cols-2 gap-4">

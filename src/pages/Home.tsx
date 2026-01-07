@@ -198,13 +198,13 @@ function Home() {
                     </div>
 
                     {isLoading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-16">
-                            {[...Array(6)].map((_, i) => (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-8 gap-y-16">
+                            {[...Array(10)].map((_, i) => (
                                 <ProductSkeleton key={i} />
                             ))}
                         </div>
                     ) : products.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-6 sm:gap-x-8 gap-y-8 sm:gap-y-12">
                             {products.map(product => (
                                 <ProductCard key={product.public_id} product={product} />
                             ))}

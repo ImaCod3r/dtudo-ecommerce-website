@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, MapPin, LogOut, ChevronRight, ShoppingBag, Home, Trash2, Loader2, X, Phone, Calendar, CreditCard, Edit2, Camera, User as UserIcon } from 'lucide-react';
+import { Package, MapPin, LogOut, ChevronLeft, ChevronRight, ShoppingBag, Home, Trash2, Loader2, X, Phone, Calendar, CreditCard, Edit2, Camera, User as UserIcon } from 'lucide-react';
 
 // Services
 import { getUserOrders } from '../services/order';
@@ -18,7 +18,7 @@ import { formatPrice } from '../utils/formatPrice';
 
 
 // Types
-import type { Order, Address } from '../types';
+import type { Order, Address, Pagination } from '../types';
 import { BASE_URL } from '../api/axios';
 
 function Profile() {
@@ -28,6 +28,9 @@ function Profile() {
     // States
     const [activeSection, setActiveSection] = useState<'orders' | 'addresses'>('orders');
     const [orders, setOrders] = useState<Order[]>([]);
+    const [pagination, setPagination] = useState<Pagination | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [isLoadingOrders, setIsLoadingOrders] = useState(false);
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -39,17 +42,22 @@ function Profile() {
         avatar: null as File | null,
     });
 
-    const fetchOrders = async () => {
+    const fetchOrders = async (page: number = 1) => {
+        setIsLoadingOrders(true);
         try {
-            const response = await getUserOrders();
-            if (Array.isArray(response)) {
-                setOrders(response);
-            } else if (response && Array.isArray(response.orders)) {
+            const response = await getUserOrders(page);
+            if (response && response.orders) {
                 setOrders(response.orders);
+                setPagination(response.pagination || null);
+            } else if (Array.isArray(response)) {
+                setOrders(response);
+                setPagination(null);
             } else if (response && Array.isArray(response.data)) {
                 setOrders(response.data);
+                setPagination(response.pagination || null);
             } else {
                 setOrders([]);
+                setPagination(null);
             }
         } catch (error: any) {
             if (!user) return;
@@ -57,6 +65,8 @@ function Profile() {
                 showError('Erro ao buscar pedidos');
             }
             console.error('Erro ao buscar pedidos:', error);
+        } finally {
+            setIsLoadingOrders(false);
         }
     };
 
@@ -119,11 +129,11 @@ function Profile() {
 
     useEffect(() => {
         if (activeSection === 'orders') {
-            fetchOrders();
+            fetchOrders(currentPage);
         } else if (activeSection === 'addresses') {
             fetchAddresses();
         }
-    }, [activeSection]);
+    }, [activeSection, currentPage]);
 
     if (!user) {
         return (
@@ -236,8 +246,13 @@ function Profile() {
                                 <ShoppingBag className="w-5 h-5" /> Pedidos Recentes
                             </h2>
 
-                            {orders?.length === 0 ? (
-                                <div className="bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-12 border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center text-center min-h-[400px] transition-all">
+                            {isLoadingOrders ? (
+                                <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-400">
+                                    <Loader2 className="w-12 h-12 animate-spin mb-4 text-[#008cff]" />
+                                    <p className="text-sm font-medium">Carregando seus pedidos...</p>
+                                </div>
+                            ) : orders?.length === 0 ? (
+                                <div className="bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-12 border border-blue-200 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center text-center min-h-[400px] transition-all">
                                     <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 shadow-lg border-4 border-[#008cff]/10">
                                         <ShoppingBag className="w-12 h-12 text-[#008cff]" />
                                     </div>
@@ -256,38 +271,75 @@ function Profile() {
                                     </button>
                                 </div>
                             ) : (
-                                (orders as Order[]).map((order: Order) => (
-                                    <div key={order.id} onClick={() => setSelectedOrder(order)} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between group hover:border-[#008cff]/30 transition-all cursor-pointer">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-gray-50 dark:bg-gray-900 rounded-2xl flex items-center justify-center text-[#008cff]">
-                                                <Package className="w-6 h-6" />
-                                            </div>
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-gray-900 dark:text-white">Pedido #{order.id}</span>
-                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${order.status === 'Entregue'
-                                                        ? 'bg-green-50 dark:bg-green-900/40 text-green-600 dark:text-green-400'
-                                                        : 'bg-orange-50 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400'
-                                                        }`}>
-                                                    </span>
+                                <div className="space-y-4">
+                                    {(orders as Order[]).map((order: Order) => (
+                                        <div key={order.id} onClick={() => setSelectedOrder(order)} className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-[#008cff]/30 transition-all cursor-pointer overflow-hidden relative">
+                                            {/* Status logic */}
+                                            <div className="flex items-center gap-3 sm:gap-4 relative z-10 min-w-0 flex-1">
+                                                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 dark:bg-gray-900 rounded-2xl flex items-center justify-center text-[#008cff] shrink-0">
+                                                    <Package className="w-5 h-5 sm:w-6 sm:h-6" />
                                                 </div>
-                                                <p className="text-xs text-gray-400">{order.createdAt}</p>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                        <span className="font-bold text-gray-900 dark:text-white truncate">Pedido #{order.id}</span>
+                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${order.status === 'Entregue'
+                                                            ? 'bg-green-50 dark:bg-green-900/40 text-green-600 dark:text-green-400'
+                                                            : 'bg-orange-50 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400'
+                                                            }`}>
+                                                            {order.status}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[10px] sm:text-xs text-gray-400 truncate mt-0.5">
+                                                        {new Date(order.createdAt).toLocaleDateString('pt-AO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="text-left sm:text-right relative z-10 shrink-0 sm:pl-0 pl-13 flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2">
+                                                <p className="text-base sm:text-lg font-black text-gray-900 dark:text-white">{formatPrice(order.total_price)}</p>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedOrder(order);
+                                                    }}
+                                                    className="text-xs font-bold text-[#008cff] sm:opacity-0 group-hover:opacity-100 transition-all transform sm:translate-x-2 group-hover:translate-x-0 bg-blue-50 sm:bg-transparent dark:bg-blue-900/20 px-2 py-1 rounded-lg sm:p-0"
+                                                >
+                                                    Ver Detalhes
+                                                </button>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-lg font-bold text-gray-900 dark:text-white">{formatPrice(order.total_price)}</p>
+                                    ))}
+
+                                    {/* Pagination Controls */}
+                                    {pagination && pagination.total_pages > 1 && (
+                                        <div className="flex items-center justify-center gap-4 pt-6 pb-2">
                                             <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setSelectedOrder(order);
-                                                }}
-                                                className="text-xs font-bold text-[#008cff] opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                                disabled={currentPage === 1 || isLoadingOrders}
+                                                className="p-2.5 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#008cff] hover:text-[#008cff] transition-all active:scale-95"
                                             >
-                                                Ver Detalhes
+                                                <ChevronLeft className="w-5 h-5" />
+                                            </button>
+
+                                            <div className="flex items-center gap-1.5 font-bold text-sm">
+                                                <span className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#008cff] text-white shadow-lg shadow-[#008cff]/20">
+                                                    {currentPage}
+                                                </span>
+                                                <span className="text-gray-400 px-1">de</span>
+                                                <span className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                                                    {pagination.total_pages}
+                                                </span>
+                                            </div>
+
+                                            <button
+                                                onClick={() => setCurrentPage(prev => Math.min(pagination.total_pages, prev + 1))}
+                                                disabled={currentPage === pagination.total_pages || isLoadingOrders}
+                                                className="p-2.5 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#008cff] hover:text-[#008cff] transition-all active:scale-95"
+                                            >
+                                                <ChevronRight className="w-5 h-5" />
                                             </button>
                                         </div>
-                                    </div>
-                                ))
+                                    )}
+                                </div>
                             )}
                         </>
                     ) : (

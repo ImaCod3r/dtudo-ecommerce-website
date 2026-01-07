@@ -41,6 +41,7 @@ function Checkout() {
   const [isOrdered, setIsOrdered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const suggestionRef = useRef<HTMLDivElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -107,33 +108,37 @@ function Checkout() {
   // Initialize Map with current location
   useEffect(() => {
     if (showMap && mapContainerRef.current) {
-      // Default center: Luanda, Angola
-      const defaultPos: [number, number] = [-8.8390, 13.2894];
+      // Default center: Cabinda, Angola (since the store delivers there) or existing address
+      const cabindaPos: [number, number] = [-5.5567, 12.1894];
+      const startPos: [number, number] = address?.lat && address?.long
+        ? [address.lat, address.long]
+        : cabindaPos;
 
       if (!mapInstanceRef.current) {
-        mapInstanceRef.current = L.map(mapContainerRef.current).setView(defaultPos, 13);
+        mapInstanceRef.current = L.map(mapContainerRef.current).setView(startPos, address?.lat ? 16 : 13);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; OpenStreetMap contributors'
         }).addTo(mapInstanceRef.current);
 
-        markerRef.current = L.marker(defaultPos, { draggable: true }).addTo(mapInstanceRef.current);
+        markerRef.current = L.marker(startPos, { draggable: true }).addTo(mapInstanceRef.current);
 
         mapInstanceRef.current.on('click', (e: any) => {
           markerRef.current.setLatLng(e.latlng);
         });
 
-        // IMMEDIATELY locate user and center pin there
-        if ("geolocation" in navigator) {
+        // If no address selected, try to locate user immediately
+        if (!address?.lat && "geolocation" in navigator) {
           navigator.geolocation.getCurrentPosition(
             (position) => {
               const userPos: [number, number] = [position.coords.latitude, position.coords.longitude];
-              mapInstanceRef.current.setView(userPos, 16);
-              markerRef.current.setLatLng(userPos);
+              if (mapInstanceRef.current && markerRef.current) {
+                mapInstanceRef.current.flyTo(userPos, 16);
+                markerRef.current.setLatLng(userPos);
+              }
             },
             (error) => {
               console.warn('Geolocation error:', error);
-              // Fallback to default position if geolocation fails
             },
             {
               enableHighAccuracy: true,
@@ -219,15 +224,22 @@ function Checkout() {
 
   const handleLocateMe = () => {
     if ("geolocation" in navigator) {
+      setIsLocating(true);
       navigator.geolocation.getCurrentPosition((position) => {
         const userPos: [number, number] = [position.coords.latitude, position.coords.longitude];
         if (mapInstanceRef.current && markerRef.current) {
-          mapInstanceRef.current.setView(userPos, 16);
+          mapInstanceRef.current.flyTo(userPos, 16);
           markerRef.current.setLatLng(userPos);
         }
+        setIsLocating(false);
       }, (error) => {
         console.error("Geolocation error:", error);
-        showError('Não foi possível obter sua localização');
+        showError('Não foi possível obter sua localização. Verifique as permissões do seu navegador.');
+        setIsLocating(false);
+      }, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
       });
     } else {
       showError('Geolocalização não suportada pelo seu navegador');
@@ -515,10 +527,15 @@ function Checkout() {
                 <button
                   type="button"
                   onClick={handleLocateMe}
-                  className="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:text-[#008cff] active:scale-95 transition-all"
+                  disabled={isLocating}
+                  className="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:text-[#008cff] active:scale-95 transition-all disabled:opacity-50"
                   title="Minha Localização"
                 >
-                  <Locate className="w-5 h-5" />
+                  {isLocating ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Locate className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>

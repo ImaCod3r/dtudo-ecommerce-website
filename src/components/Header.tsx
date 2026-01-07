@@ -13,7 +13,8 @@ import {
     ChevronRight,
     BriefcaseBusiness,
     Sparkles,
-    TrendingUp
+    TrendingUp,
+    Loader2
 } from "lucide-react";
 import Logo from "./Logo";
 
@@ -183,13 +184,23 @@ function Header() {
             </div>
 
             {/* Main Header */}
-            <div className="container mx-auto px-4 py-4">
-                <div className="flex items-center justify-between gap-4">
-                    {/* Logo */}
-                    <Logo />
+            <div className="container mx-auto px-4 sm:px-6 py-3 lg:py-5">
+                <div className="flex items-center justify-between gap-4 lg:gap-8">
+                    {/* Menu Toggle - Mobile */}
+                    <button
+                        className="lg:hidden p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    >
+                        {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    </button>
 
-                    {/* Search Bar - Desktop */}
-                    <div className="hidden md:flex flex-1 max-w-2xl mx-8 relative group" ref={searchRef}>
+                    {/* Logo */}
+                    <div className="shrink-0 scale-90 sm:scale-100">
+                        <Logo />
+                    </div>
+
+                    {/* Search Bar - Desktop & Large Tablets */}
+                    <div className="hidden lg:flex flex-1 max-w-2xl relative group" ref={searchRef}>
                         <form onSubmit={handleSearch} className="w-full">
                             <div className="relative w-full">
                                 <input
@@ -197,67 +208,83 @@ function Header() {
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onFocus={() => setShowSuggestions(true)}
-                                    placeholder="Pesquisar produtos..."
-                                    className="w-full px-4 py-3 pl-12 pr-4 rounded-full border-2 border-gray-200 focus:border-[#028dfe] focus:outline-none transition-colors duration-300"
+                                    placeholder="O que você está procurando hoje?"
+                                    className="w-full px-6 py-3.5 pl-14 pr-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-[#028dfe] focus:bg-white dark:focus:bg-gray-800 outline-none transition-all duration-300 dark:text-white"
                                 />
-                                <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
+                                <Search className="w-6 h-6 text-gray-400 absolute left-5 top-1/2 transform -translate-y-1/2" />
                             </div>
                         </form>
 
                         {/* Search Suggestions */}
                         {showSuggestions && (searchQuery || suggestions.length > 0) && (
-                            <div className="absolute top-full left-0 right-0 bg-white shadow-xl rounded-2xl border border-gray-100 mt-2 overflow-hidden z-50">
+                            <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 shadow-2xl rounded-2xl border border-gray-100 dark:border-gray-700 mt-2 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
                                 {isSearching ? (
-                                    <div className="p-4 text-center text-gray-400 text-sm">
-                                        Carregando...
+                                    <div className="p-6 text-center text-gray-400">
+                                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                                        Buscando produtos...
                                     </div>
                                 ) : suggestions.length > 0 ? (
-                                    <ul>
+                                    <ul className="py-2">
                                         {suggestions.map((product) => (
-                                            <li key={product.id} className="border-b border-gray-50 last:border-none">
+                                            <li key={product.id}>
                                                 <button
                                                     onClick={() => {
                                                         navigate(`/produto/${product.public_id}`);
                                                         setShowSuggestions(false);
                                                         setSearchQuery("");
                                                     }}
-                                                    className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                                    className="w-full px-5 py-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center gap-4 transition-colors"
                                                 >
-                                                    <img
-                                                        src={`${BASE_URL}/${product.image_url}`}
-                                                        alt={product.name}
-                                                        className="w-10 h-10 rounded-lg object-cover bg-gray-100"
-                                                    />
-                                                    <div>
-                                                        <p className="font-medium text-gray-900 text-sm line-clamp-1">{product.name}</p>
-                                                        <p className="text-xs text-[#028dfe] font-bold">{new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA' }).format(product.price)}</p>
+                                                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 shrink-0">
+                                                        <img
+                                                            src={product.image_url.startsWith('http') ? product.image_url : `${BASE_URL}/${product.image_url}`}
+                                                            alt={product.name}
+                                                            className="w-full h-full object-cover"
+                                                        />
                                                     </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-bold text-gray-900 dark:text-white text-sm line-clamp-1">{product.name}</p>
+                                                        <p className="text-xs text-[#028dfe] font-black">{new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA' }).format(product.price)}</p>
+                                                    </div>
+                                                    <ChevronRight className="w-4 h-4 text-gray-300" />
                                                 </button>
                                             </li>
                                         ))}
                                     </ul>
                                 ) : searchQuery.length > 2 ? (
-                                    <div className="p-4 text-center text-gray-400 text-sm">
-                                        Nenhum produto encontrado.
+                                    <div className="p-8 text-center text-gray-400">
+                                        <div className="w-12 h-12 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-3">
+                                            <Search className="w-6 h-6" />
+                                        </div>
+                                        <p className="text-sm">Nenhum produto encontrado para "{searchQuery}"</p>
                                     </div>
                                 ) : null}
                             </div>
                         )}
                     </div>
 
-                    {/* Location */}
-                    <div className="hidden md:flex group items-center gap-2 cursor-pointer max-w-[200px]">
-                        <Globe className="w-6 h-6 text-gray-700 group-hover:text-[#028dfe] transition-colors shrink-0" />
-                        <span className="font-bold text-left text-xs group-hover:text-[#028dfe] transition-colors leading-tight truncate">
-                            {address || "Localização não encontrada"}
-                        </span>
-                    </div>
+                    {/* Icons Section */}
+                    <div className="flex items-center gap-3 sm:gap-6">
+                        {/* Location - Hidden on small mobile */}
+                        <div
+                            className="hidden sm:flex items-center gap-2 cursor-pointer group"
+                            onClick={() => navigate('/checkout')}
+                        >
+                            <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 text-[#028dfe] rounded-xl group-hover:bg-[#028dfe] group-hover:text-white transition-all duration-300">
+                                <Globe className="w-5 h-5" />
+                            </div>
+                            <div className="hidden lg:flex flex-col text-left">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Entregar em</span>
+                                <span className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1 max-w-[120px]">
+                                    {address || "Angola"}
+                                </span>
+                            </div>
+                        </div>
 
-                    {/* Icons - Desktop */}
-                    <div className="hidden md:flex items-center gap-6">
+                        {/* Account */}
                         <button className="relative group cursor-pointer" onClick={() => navigate('/profile')}>
                             {user?.avatar ? (
-                                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent group-hover:border-[#028dfe] transition-all">
+                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-transparent group-hover:border-[#028dfe] transition-all shadow-sm">
                                     <img
                                         src={user.avatar.startsWith('http') ? user.avatar : `${BASE_URL}/${user.avatar}`}
                                         alt={user.name}
@@ -265,35 +292,24 @@ function Header() {
                                     />
                                 </div>
                             ) : (
-                                <User className="w-6 h-6 text-gray-700 group-hover:text-[#028dfe] transition-colors" />
+                                <div className="p-2.5 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl group-hover:bg-[#028dfe]/10 group-hover:text-[#028dfe] transition-all">
+                                    <User className="w-6 h-6" />
+                                </div>
                             )}
-                            <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                {user ? 'Minha Conta' : 'Entrar'}
-                            </span>
                         </button>
+
+                        {/* Cart */}
                         <button className="relative group cursor-pointer" onClick={() => navigate('/cart')}>
-                            <ShoppingCart className="w-6 h-6 text-gray-700 group-hover:text-[#028dfe] transition-colors" />
-                            <span className="absolute -top-2 -right-2 bg-[#028dfe] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                                {totalItems}
-                            </span>
-                            <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                Carrinho
-                            </span>
+                            <div className="p-2.5 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl group-hover:bg-[#028dfe]/10 group-hover:text-[#028dfe] transition-all">
+                                <ShoppingCart className="w-6 h-6" />
+                            </div>
+                            {totalItems > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-[#ff3b30] text-white text-[10px] font-black rounded-lg min-w-[20px] h-5 px-1 flex items-center justify-center border-2 border-white dark:border-gray-900 shadow-lg">
+                                    {totalItems}
+                                </span>
+                            )}
                         </button>
                     </div>
-
-                    {/* Mobile Menu Button */}
-                    <button
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                        aria-label="Menu"
-                    >
-                        {isMenuOpen ? (
-                            <X className="w-6 h-6" />
-                        ) : (
-                            <Menu className="w-6 h-6" />
-                        )}
-                    </button>
                 </div>
             </div>
 
@@ -401,9 +417,19 @@ function Header() {
                         {categories.map((category, index) => (
                             <div key={index} className="border-b border-gray-100">
                                 <details className="group">
-                                    <summary className="px-4 py-3 cursor-pointer hover:bg-gray-50 flex items-center justify-between">
-                                        <span className="font-medium text-gray-800">{category.name}</span>
-                                        <ChevronDown className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" />
+                                    <summary className="px-4 py-3 cursor-pointer hover:bg-gray-50 flex items-center justify-between list-none">
+                                        <div className="flex items-center justify-between w-full">
+                                            <Link
+                                                to={`/categoria/${category.id}`}
+                                                className="flex-1 font-bold text-gray-800 dark:text-white"
+                                                onClick={() => {
+                                                    setIsMenuOpen(false);
+                                                }}
+                                            >
+                                                {category.name}
+                                            </Link>
+                                            <ChevronDown className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform ml-4" />
+                                        </div>
                                     </summary>
                                     {category.children.length > 0 && (
                                         <div className="bg-gray-50 px-4 py-2">
