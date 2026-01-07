@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { ShoppingCart, ArrowLeft, Plus, Minus } from 'lucide-react';
+import { Share2, ShoppingCart, ArrowLeft, Plus, Minus, Check } from 'lucide-react';
+import { useAuth } from '../auth/useAuth';
+import affiliateService from '../services/affiliateService';
+import { useAlert } from '../context/AlertContext';
 
-import type { Product } from '../types';
+import type { Product, Affiliate } from '../types';
 import api, { BASE_URL } from '../api/axios';
 
 // Components
@@ -12,10 +15,14 @@ import { SEO } from '../components/SEO';
 
 function ProductDetails() {
     const { addToCart } = useCart();
+    const { showSuccess } = useAlert();
+    const { user } = useAuth();
     const { public_id } = useParams<{ public_id: string }>();
     const navigate = useNavigate();
     const [product, setProduct] = useState<Product | null>(null);
     const [quantity, setQuantity] = useState(1);
+    const [affiliate, setAffiliate] = useState<Affiliate | null>(null);
+    const [copied, setCopied] = useState(false);
 
     const fetchProduct = async () => {
         try {
@@ -26,9 +33,48 @@ function ProductDetails() {
         }
     }
 
+    const fetchAffiliate = async () => {
+        if (!user) return;
+        try {
+            const response = await affiliateService.getMe();
+            if (response && response.data) {
+                setAffiliate(response.data);
+            }
+        } catch (error) {
+            console.error('Error fetching affiliate:', error);
+        }
+    };
+
     useEffect(() => {
         fetchProduct();
-    }, [public_id]);
+        fetchAffiliate();
+    }, [public_id, user]);
+
+    const handleShare = async () => {
+        const affiliateCode = affiliate?.is_affiliate ? (affiliate?.stats?.code || affiliate?.affiliate?.code) : localStorage.getItem('affiliate_code');
+        const shareUrl = affiliateCode
+            ? `${window.location.origin}/produto/${public_id}?r=${affiliateCode}`
+            : `${window.location.origin}/produto/${public_id}`;
+
+        const shareData = {
+            title: product?.name,
+            text: product?.description,
+            url: shareUrl,
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                console.log('Share failed:', err);
+            }
+        } else {
+            navigator.clipboard.writeText(shareUrl);
+            setCopied(true);
+            showSuccess('Link copiado com sucesso!');
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
 
     if (!product) {
         return (
@@ -104,13 +150,25 @@ function ProductDetails() {
                     </p>
 
                     <div className="space-y-8 mb-12">
-                        <div>
-                            <h3 className="text-xs text-left font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
-                                Descrição do Produto
-                            </h3>
-                            <p className="text-gray-600 text-left dark:text-gray-400 leading-relaxed text-lg">
-                                {product.description}
-                            </p>
+                        <div className="flex justify-between items-start gap-4">
+                            <div className="flex-1">
+                                <h3 className="text-xs text-left font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
+                                    Descrição do Produto
+                                </h3>
+                                <p className="text-gray-600 text-left dark:text-gray-400 leading-relaxed text-lg">
+                                    {product.description}
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleShare}
+                                className="flex flex-col items-center gap-2 group"
+                                title="Partilhar Produto"
+                            >
+                                <div className="w-12 h-12 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl flex items-center justify-center text-gray-500 group-hover:text-[#008cff] group-hover:border-[#008cff]/20 transition-all shadow-sm">
+                                    {copied ? <Check className="w-5 h-5 text-emerald-500" /> : <Share2 className="w-5 h-5" />}
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-[#008cff]">Partilhar</span>
+                            </button>
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-center gap-6">

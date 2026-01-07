@@ -30,11 +30,13 @@ import Shipping from './pages/Shipping';
 import Returns from './pages/Returns';
 import FAQ from './pages/FAQ';
 import Contact from './pages/Contact';
+import Affiliates from './pages/Affiliates';
 import NotFound from './pages/NotFound';
 import PhoneAlert from './components/PhoneAlert';
 import PushNotificationDialog from './components/PushNotificationDialog';
 import { InstallPrompt } from './components/InstallPrompt';
 import { WhatsAppButton } from './components/WhatsAppButton';
+import AffiliateTracker from './components/AffiliateTracker';
 
 function App() {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -49,6 +51,7 @@ function App() {
             <AlertProvider>
               <CartProvider>
                 <Router>
+                  <AffiliateTracker />
                   <Routes>
                     {/* Login Route - Standalone Layout */}
                     <Route path="/login" element={<Login />} />
@@ -77,6 +80,7 @@ function App() {
                             <Route path="/devolucoes" element={<Returns />} />
                             <Route path="/faq" element={<FAQ />} />
                             <Route path="/contato" element={<Contact />} />
+                            <Route path="/afiliados" element={<Affiliates />} />
                             <Route path="*" element={<NotFound />} />
                           </Routes>
                         </main>

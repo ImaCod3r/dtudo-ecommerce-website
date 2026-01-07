@@ -28,8 +28,10 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../auth/useAuth";
 import { useGeolocationPermission } from "../hooks/useGeolocationPermission";
 import { useDebounce } from "../hooks/useDebounce";
+import { useAffiliateTracker } from "../hooks/useAffiliateTracker";
 
 function Header() {
+    useAffiliateTracker();
     const navigate = useNavigate();
     const { user } = useAuth();
 

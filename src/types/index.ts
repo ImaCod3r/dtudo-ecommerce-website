@@ -46,6 +46,37 @@ export interface CreateOrder {
   address: Address;
   phone: string;
   total_price: number;
+  affiliate_code?: string;
+}
+
+export interface AffiliateStats {
+  balance: number;
+  total_earned: number;
+  pending_withdrawal: number;
+}
+
+export interface Affiliate {
+  is_affiliate: boolean;
+  affiliate?: {
+    id: number;
+    code: string;
+    status: 'pending' | 'approved' | 'rejected';
+    created_at: string;
+  };
+  stats: {
+    balance: number;
+    total_earned: number;
+    pending_withdrawal: number;
+    withdrawn: number;
+    code: string;
+    status: string;
+  };
+}
+
+export interface WithdrawalRequest {
+  amount: number;
+  iban: string;
+  bank: string;
 }
 
 export interface Order {

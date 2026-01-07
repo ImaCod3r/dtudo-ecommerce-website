@@ -65,12 +65,15 @@ function Checkout() {
 
     setIsLoading(true);
 
+    const affiliateCode = localStorage.getItem('affiliate_code');
+
     const orderData = {
       items: cart,
       address: address!,
       phone: user.phone!,
       total_price: total,
       shipping_fee: 2000,
+      affiliate_code: affiliateCode || undefined,
     }
 
     try {

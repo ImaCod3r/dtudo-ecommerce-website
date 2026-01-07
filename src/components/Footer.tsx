@@ -17,6 +17,7 @@ function Footer() {
                         <li><Link to="/sobre-nos" className="hover:text-[#008cff] cursor-pointer transition-colors font-medium">Sobre Nós</Link></li>
                         <li><Link to="/termos" className="hover:text-[#008cff] cursor-pointer transition-colors font-medium">Termos de Serviço</Link></li>
                         <li><Link to="/privacidade" className="hover:text-[#008cff] cursor-pointer transition-colors font-medium">Política de Privacidade</Link></li>
+                        <li><Link to="/afiliados" className="hover:text-[#008cff] cursor-pointer transition-colors font-medium">Afiliados</Link></li>
                     </ul>
                 </div>
                 <div className="text-left">
