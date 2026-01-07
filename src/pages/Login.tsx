@@ -2,6 +2,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import { login } from "../services/auth";
 import { useAuth } from "../auth/useAuth";
 import { useNavigate } from "react-router-dom";
+import { subscribeToPushNotifications } from "../hooks/usePushNotifications";
 
 // Components
 import Logo from "../components/Logo";
@@ -18,8 +19,19 @@ function Login() {
 
         try {
             await login(token);
-            await refreshUser();
-            navigate('/');
+            const user = await refreshUser();
+
+            // Solicitar permissão de notificação após login (não bloqueia navegação)
+            subscribeToPushNotifications().catch(err => {
+                console.warn('Não foi possível ativar notificações:', err);
+            });
+
+            // @ts-ignore
+            if (user && !user.phone) {
+                navigate('/onboarding');
+            } else {
+                navigate('/');
+            }
         } catch (error) {
             console.log(error);
         }

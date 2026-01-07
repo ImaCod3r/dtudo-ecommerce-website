@@ -5,7 +5,7 @@ export interface AuthContextData {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-  refreshUser(): Promise<void>;
+  refreshUser(): Promise<User | null>;
   logout(): Promise<void>;
 }
 

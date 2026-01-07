@@ -9,6 +9,7 @@ export interface User {
   email: string;
   avatar: string;
   public_id: string;
+  phone?: string;
 }
 
 export interface Product {
@@ -75,4 +76,11 @@ export interface Address {
   name: string;
   long: number;
   lat: number;
+}
+
+export interface Pagination {
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  per_page: number;
 }

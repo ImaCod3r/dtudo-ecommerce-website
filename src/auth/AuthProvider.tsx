@@ -11,8 +11,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const data = await getUser();
             setUser(data);
+            return data;
         } catch {
             setUser(null);
+            return null;
         } finally {
             setLoading(false);
         }

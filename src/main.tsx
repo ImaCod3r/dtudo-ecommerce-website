@@ -3,6 +3,19 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 
+// Registrar o Service Worker para push notifications
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('Service Worker registrado com sucesso:', registration.scope);
+      })
+      .catch(error => {
+        console.error('Erro ao registrar Service Worker:', error);
+      });
+  });
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

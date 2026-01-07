@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, MapPin, LogOut, ChevronRight, ShoppingBag, Home, Trash2, Loader2, X, Phone, Calendar, CreditCard } from 'lucide-react';
+import { Package, MapPin, LogOut, ChevronRight, ShoppingBag, Home, Trash2, Loader2, X, Phone, Calendar, CreditCard, Edit2, Camera, User as UserIcon } from 'lucide-react';
 
 // Services
 import { getUserOrders } from '../services/order';
@@ -9,16 +9,20 @@ import { getAddresses, deleteAddress } from '../services/address';
 import { useAuth } from '../auth/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useAlert } from '../context/AlertContext';
+import { updateUser } from '../services/auth';
 
 // Utils
 import { formatPrice } from '../utils/formatPrice';
+
+// Components
+import PushNotificationToggle from '../components/PushNotificationToggle';
 
 // Types
 import type { Order, Address } from '../types';
 import { BASE_URL } from '../api/axios';
 
 function Profile() {
-    const { user, logout } = useAuth();
+    const { user, logout, refreshUser } = useAuth();
     const navigate = useNavigate();
     const { showSuccess, showError } = useAlert();
     // States
@@ -27,6 +31,13 @@ function Profile() {
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [editForm, setEditForm] = useState({
+        name: user?.name || '',
+        phone: user?.phone || '',
+        avatar: null as File | null,
+    });
 
     const fetchOrders = async () => {
         try {
@@ -40,9 +51,11 @@ function Profile() {
             } else {
                 setOrders([]);
             }
-        } catch (error) { 
-            if(!user) return;
-            showError('Erro ao buscar pedidos');
+        } catch (error: any) {
+            if (!user) return;
+            if (error.response?.status === 500) {
+                showError('Erro ao buscar pedidos');
+            }
             console.error('Erro ao buscar pedidos:', error);
         }
     };
@@ -53,26 +66,46 @@ function Profile() {
             const data = await getAddresses();
 
             if (!data) {
-                showError('Nenhum endereço encontrado');
                 setAddresses([]);
                 return;
             }
             setAddresses(Array.isArray(data?.addresses) ? data.addresses : []);
-        } catch (error) { 
-            if(!user) return;
+        } catch (error: any) {
+            if (!user) return;
 
-            showError('Erro ao buscar endereços');
+            if (error.response?.status === 500) {
+                showError('Erro ao buscar endereços');
+            }
             console.error('Erro ao buscar endereços:', error);
-            
+
             setAddresses([]);
         } finally {
             setIsLoadingAddresses(false);
         }
     }
 
+    const handleUpdateProfile = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsUpdating(true);
+        try {
+            await updateUser({
+                name: editForm.name,
+                phone: editForm.phone,
+                avatar: editForm.avatar || undefined
+            });
+            await refreshUser();
+            showSuccess('Perfil atualizado com sucesso!');
+            setIsEditingProfile(false);
+        } catch (error) {
+            showError('Erro ao atualizar perfil');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
     const handleDeleteAddress = async (id: number) => {
         const previousAddresses = [...addresses];
-        setAddresses(prev => prev.filter(addr => addr.id !== id));
+        setAddresses((prev: Address[]) => prev.filter((addr: Address) => addr.id !== id));
 
         try {
             await deleteAddress(id);
@@ -121,12 +154,32 @@ function Profile() {
                         <span className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-bold px-3 py-1 rounded-full border border-green-100 dark:border-green-800 flex items-center gap-1">
                             <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div> Cliente Verificado
                         </span>
+                        {user.phone && (
+                            <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs font-bold px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800 flex items-center gap-1">
+                                <Phone className="w-3 h-3" /> {user.phone}
+                            </span>
+                        )}
                     </div>
                 </div>
                 <div className="flex gap-2">
                     <button
+                        onClick={() => {
+                            setEditForm({
+                                name: user?.name || '',
+                                phone: user?.phone || '',
+                                avatar: null,
+                            });
+                            setIsEditingProfile(true);
+                        }}
+                        className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400 rounded-2xl hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                        title="Editar Perfil"
+                    >
+                        <Edit2 className="w-5 h-5" />
+                    </button>
+                    <button
                         onClick={logout}
                         className="p-3 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                        title="Sair"
                     >
                         <LogOut className="w-5 h-5" />
                     </button>
@@ -165,6 +218,11 @@ function Profile() {
                             </button>
                         </nav>
                     </div>
+
+                    {/* Push Notifications Section */}
+                    <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+                        <PushNotificationToggle />
+                    </div>
                 </div>
 
                 {/* Content Area */}
@@ -195,7 +253,7 @@ function Profile() {
                                     </button>
                                 </div>
                             ) : (
-                                orders?.map((order) => (
+                                (orders as Order[]).map((order: Order) => (
                                     <div key={order.id} onClick={() => setSelectedOrder(order)} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between group hover:border-[#008cff]/30 transition-all cursor-pointer">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 bg-gray-50 dark:bg-gray-900 rounded-2xl flex items-center justify-center text-[#008cff]">
@@ -259,7 +317,7 @@ function Profile() {
                                     </button>
                                 </div>
                             ) : (
-                                addresses.map((address) => (
+                                (addresses as Address[]).map((address: Address) => (
                                     <div key={address.id} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm group hover:border-[#008cff]/30 transition-all">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-4 flex-1">
@@ -344,7 +402,7 @@ function Profile() {
                                 <div>
                                     <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Itens do Pedido</h4>
                                     <div className="space-y-4">
-                                        {selectedOrder.items.map((item) => (
+                                        {selectedOrder.items.map((item: any) => (
                                             <div key={item.id} className="flex gap-4 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 hover:border-[#008cff]/20 transition-colors">
                                                 <div className="w-20 h-20 bg-gray-100 dark:bg-gray-900 rounded-xl overflow-hidden shrink-0">
                                                     <img
@@ -394,6 +452,95 @@ function Profile() {
                     </div>
                 )
             }
+
+            {/* Profile Edit Modal */}
+            {isEditingProfile && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                        <div className="p-8">
+                            <div className="flex justify-between items-center mb-8">
+                                <h3 className="text-2xl font-black text-gray-900 dark:text-white">Editar Perfil</h3>
+                                <button
+                                    onClick={() => setIsEditingProfile(false)}
+                                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                                >
+                                    <X className="w-6 h-6 text-gray-400" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleUpdateProfile} className="space-y-6">
+                                {/* Avatar Upload */}
+                                <div className="flex flex-col items-center gap-4 mb-6">
+                                    <div className="relative group">
+                                        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#008cff]/20">
+                                            <img
+                                                src={editForm.avatar ? URL.createObjectURL(editForm.avatar) : user?.avatar}
+                                                alt="Avatar"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                                            <Camera className="w-6 h-6" />
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) setEditForm({ ...editForm, avatar: file });
+                                                }}
+                                            />
+                                        </label>
+                                    </div>
+                                    <p className="text-xs text-gray-400">Toque na imagem para mudar</p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Nome Completo</label>
+                                        <div className="relative">
+                                            <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                            <input
+                                                type="text"
+                                                value={editForm.name}
+                                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                                className="w-full bg-gray-50 dark:bg-gray-900/50 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-[#008cff] outline-none text-gray-900 dark:text-white font-medium"
+                                                placeholder="Seu nome"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Telefone (WhatsApp)</label>
+                                        <div className="relative">
+                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                            <input
+                                                type="tel"
+                                                value={editForm.phone}
+                                                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                                className="w-full bg-gray-50 dark:bg-gray-900/50 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-[#008cff] outline-none text-gray-900 dark:text-white font-medium"
+                                                placeholder="900 000 000"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isUpdating}
+                                    className="w-full bg-[#008cff] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#007ad6] transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-[#008cff]/20 mt-8"
+                                >
+                                    {isUpdating ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        'Salvar Alterações'
+                                    )}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

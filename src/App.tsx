@@ -22,7 +22,8 @@ import Checkout from './pages/Checkout';
 import News from './pages/News';
 import Services from './pages/Services';
 import BestSellers from './pages/BestSellers';
-
+import Onboarding from './pages/Onboarding';
+import PhoneAlert from './components/PhoneAlert';
 
 function App() {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -31,16 +32,18 @@ function App() {
       <AuthProvider>
         <GoogleOAuthProvider clientId={clientId}>
           <LocationProvider>
-             <AlertProvider>
+            <AlertProvider>
               <CartProvider>
                 <Router>
                   <Routes>
                     {/* Login Route - Standalone Layout */}
                     <Route path="/login" element={<Login />} />
+                    <Route path="/onboarding" element={<Onboarding />} />
 
                     {/* Main App Routes - With Header, Breadcrumbs, and Footer */}
                     <Route path="/*" element={
                       <>
+                        <PhoneAlert />
                         <Header />
                         <main className="pt-40 md:pt-52">
                           <Routes>

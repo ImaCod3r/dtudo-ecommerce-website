@@ -6,6 +6,7 @@ import { useAuth } from '../auth/useAuth';
 import { useAlert } from '../context/AlertContext';
 
 import { createOrder } from '../services/order';
+import { getAddresses } from '../services/address';
 import { BASE_URL } from '../api/axios';
 
 import { Truck, Phone, MapPin, CheckCircle2, Loader2, Map as MapIcon, X, Search, Locate } from 'lucide-react';
@@ -18,6 +19,9 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+// Types
+import type { Address } from '../types';
 
 let DefaultIcon = L.icon({
   iconUrl: icon,
@@ -44,10 +48,12 @@ function Checkout() {
   const markerRef = useRef<any>(null);
   const [formData, setFormData] = useState({
     address: '',
-    phone: ''
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [userAddresses, setUserAddresses] = useState<Address[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<Address[]>([]);
 
   const total = subtotal + 1500 + (subtotal * 0.1);
 
@@ -60,7 +66,7 @@ function Checkout() {
     const orderData = {
       items: cart,
       address: address!,
-      phone: formData.phone,
+      phone: user.phone!,
       total_price: total,
     }
 
@@ -80,7 +86,25 @@ function Checkout() {
     }
   }
 
-  // Initialize Map
+  // Fetch user addresses on mount
+  useEffect(() => {
+    const fetchUserAddresses = async () => {
+      try {
+        const data = await getAddresses();
+        if (data && Array.isArray(data.addresses)) {
+          setUserAddresses(data.addresses);
+        }
+      } catch (error) {
+        console.error('Error fetching addresses:', error);
+      }
+    };
+
+    if (user) {
+      fetchUserAddresses();
+    }
+  }, [user]);
+
+  // Initialize Map with current location
   useEffect(() => {
     if (showMap && mapContainerRef.current) {
       // Default center: Luanda, Angola
@@ -99,13 +123,24 @@ function Checkout() {
           markerRef.current.setLatLng(e.latlng);
         });
 
-        // Try to locate user
+        // IMMEDIATELY locate user and center pin there
         if ("geolocation" in navigator) {
-          navigator.geolocation.getCurrentPosition((position) => {
-            const userPos: [number, number] = [position.coords.latitude, position.coords.longitude];
-            mapInstanceRef.current.setView(userPos, 16);
-            markerRef.current.setLatLng(userPos);
-          });
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const userPos: [number, number] = [position.coords.latitude, position.coords.longitude];
+              mapInstanceRef.current.setView(userPos, 16);
+              markerRef.current.setLatLng(userPos);
+            },
+            (error) => {
+              console.warn('Geolocation error:', error);
+              // Fallback to default position if geolocation fails
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0
+            }
+          );
         }
       }
 
@@ -199,6 +234,47 @@ function Checkout() {
     }
   };
 
+  // Handle address input change with suggestions
+  const handleAddressInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, address: value }));
+
+    // Filter suggestions based on input
+    if (value.trim() && userAddresses.length > 0) {
+      const filtered = userAddresses.filter(addr =>
+        addr.name.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else {
+      setShowSuggestions(false);
+      setFilteredSuggestions([]);
+    }
+  };
+
+  // Handle suggestion selection
+  const handleSelectSuggestion = (selectedAddress: Address) => {
+    setFormData(prev => ({ ...prev, address: selectedAddress.name }));
+    setAddress({
+      name: selectedAddress.name,
+      long: selectedAddress.long,
+      lat: selectedAddress.lat
+    });
+    setShowSuggestions(false);
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   if (cart.length === 0 && !isOrdered) {
     navigate('/cart');
     return null;
@@ -240,6 +316,23 @@ function Checkout() {
             </div>
           ) : null}
 
+          {user && !user.phone && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 p-6 rounded-3xl mb-8">
+              <h3 className="text-amber-600 font-bold mb-2 flex items-center gap-2">
+                <Phone className="w-5 h-5" /> Telefone Necessário
+              </h3>
+              <p className="text-sm text-amber-800/70 dark:text-amber-300 mb-4">
+                Você precisa cadastrar seu número de telefone para que possamos entrar em contato sobre a entrega.
+              </p>
+              <button
+                onClick={() => navigate('/onboarding')}
+                className="bg-amber-500 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-amber-600 transition-colors"
+              >
+                Cadastrar Telefone
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="col-span-full relative" ref={suggestionRef}>
@@ -254,40 +347,60 @@ function Checkout() {
                   </button>
                 </div>
                 <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
                   <input
                     required
                     type="text"
                     placeholder="Comece a digitar sua rua..."
                     className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-10 focus:ring-2 focus:ring-[#008cff] outline-none dark:text-white transition-colors"
                     value={formData.address}
-                    onChange={() => void (0)}
+                    onChange={handleAddressInputChange}
                     autoComplete="off"
                   />
 
+                  {/* Address Suggestions Dropdown */}
+                  {showSuggestions && filteredSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl max-h-60 overflow-y-auto z-50">
+                      {filteredSuggestions.map((addr) => (
+                        <button
+                          key={addr.id}
+                          type="button"
+                          onClick={() => handleSelectSuggestion(addr)}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-start gap-3 group"
+                        >
+                          <MapPin className="w-4 h-4 text-[#008cff] mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 group-hover:text-[#008cff] transition-colors">
+                              {addr.name}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              Endereço salvo
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div>
-                <label className="block text-left text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Telefone</label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    required
-                    type="tel"
-                    placeholder="900 000 000"
-                    className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 focus:ring-2 focus:ring-[#008cff] outline-none dark:text-white"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
+              <div className="col-span-full">
+                <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 p-4 rounded-2xl flex items-center gap-3">
+                  <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-xl">
+                    <Phone className="w-5 h-5 text-[#008cff]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Telefone de Contato</label>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">{user?.phone || 'Não cadastrado'}</p>
+                  </div>
                 </div>
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={!user || isLoading}
-              className={`w-full py-4 rounded-2xl font-bold text-lg shadow-xl active:scale-95 transition-all mt-6 ${user && !isLoading
+              disabled={!user || !user.phone || isLoading || !address}
+              className={`w-full py-4 rounded-2xl font-bold text-lg shadow-xl active:scale-95 transition-all mt-6 ${user && user.phone && !isLoading && address
                 ? 'bg-[#008cff] text-white hover:bg-[#007ad6] shadow-[#008cff]/20'
                 : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
                 }`}
