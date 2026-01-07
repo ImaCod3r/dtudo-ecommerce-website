@@ -8,6 +8,7 @@ import api, { BASE_URL } from '../api/axios';
 
 // Components
 import Back from '../components/Back';
+import { SEO } from '../components/SEO';
 
 function ProductDetails() {
     const { addToCart } = useCart();
@@ -42,6 +43,12 @@ function ProductDetails() {
 
     return (
         <div className="w-full max-w-7xl mx-auto sm:px-4 lg:px-8 pb-12">
+            <SEO
+                title={product.name}
+                description={product.description}
+                image={product.image_url.startsWith('http') ? product.image_url : `${BASE_URL}/${product.image_url}`}
+                type="product"
+            />
             {/* Back Button */}
             <Back />
 
@@ -49,7 +56,7 @@ function ProductDetails() {
                 {/* Product Image */}
                 <div>
                     <div className="aspect-square sm:aspect-video rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 shadow-inner">
-                        <img src={`${BASE_URL}/${product.image_url}`} alt={product.name} className="w-full h-full object-contain p-4 sm:p-8" />
+                        <img src={product.image_url.startsWith('http') ? product.image_url : `${BASE_URL}/${product.image_url}`} alt={product.name} className="w-full h-full object-contain p-4 sm:p-8" />
                     </div>
 
                     <div className="mt-auto pt-8 border-t border-gray-50 dark:border-gray-700 grid grid-cols-2 gap-4">

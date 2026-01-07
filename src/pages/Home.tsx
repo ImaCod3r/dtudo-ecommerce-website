@@ -9,6 +9,7 @@ import { useGeolocationPermission } from "../hooks/useGeolocationPermission";
 import ProductCard from "../components/ProductCard";
 import ProductSkeleton from "../components/ProductSkeleton";
 import Modal from "../components/Modal";
+import { SEO } from "../components/SEO";
 
 import api from "../api/axios";
 import { MapIcon, Home as HomeIcon, ChevronRight, Search } from "lucide-react";
@@ -29,20 +30,18 @@ function Home() {
     const { location, refreshLocation } = useLocation();
     const { permissionStatus } = useGeolocationPermission();
 
-    const { category: categoryId } = useParams();
+    const { category: categorySlug } = useParams();
     const [searchParams] = useSearchParams();
     const searchTerm = searchParams.get('search');
 
-    const fetchCategoryInfo = async () => {
-        if (!categoryId) return;
+    const getCategoryIdFromSlug = async (slug: string) => {
         try {
-            // Tenta buscar informações detalhadas da categoria
             const response = await api.get('/categories');
             const categories: any[] = response.data.categories;
 
             const findCategory = (cats: any[]): any => {
                 for (const cat of cats) {
-                    if (cat.id == categoryId) return cat;
+                    if (cat.slug === slug) return cat;
                     if (cat.children) {
                         const found = findCategory(cat.children);
                         if (found) return found;
@@ -54,16 +53,19 @@ function Home() {
             const foundCategory = findCategory(categories);
             if (foundCategory) {
                 setCategoryName(foundCategory.name);
+                return foundCategory.id;
             }
+            return null;
         } catch (error) {
             console.error("Error fetching category info:", error);
+            return null;
         }
     };
 
-    const fetchProducts = async (page = 1) => {
+    const fetchProducts = async (page = 1, catId?: string | null) => {
         setIsLoading(true);
         try {
-            const endpoint = categoryId ? `/products/category/${categoryId}` : "/products";
+            const endpoint = catId ? `/products/category/${catId}` : "/products";
 
             const params: any = {
                 page,
@@ -95,22 +97,13 @@ function Home() {
                 fetchedProducts = [];
             }
 
-            // Client-side filtering check (Fallback if backend ignores search params)
+            // Client-side filtering check
             if (searchTerm && fetchedProducts.length > 0) {
-                // We only filter if we suspect the backend returned unrelated data
-                // A simple heuristic: if strict filtering removes ALL items, maybe the backend returned a default list.
-                // OR we just strictly filter always to be safe.
                 const filtered = fetchedProducts.filter(product =>
                     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
                 );
-
-                // If the API returned a full page of 12 items but only 1 matches, we show 1.
-                // If the API returned 12 random items (iPhone etc), we show 0 (better than wrong items).
                 fetchedProducts = filtered;
-
-                // Note: This breaks pagination accuracy if filtering client side on a single page, 
-                // but it fixes the critical bug of showing wrong products.
             }
 
             setProducts(fetchedProducts);
@@ -126,7 +119,7 @@ function Home() {
     let pageTitle = "Todos os Produtos";
     if (searchTerm) {
         pageTitle = `Resultados para "${searchTerm}"`;
-    } else if (categoryId) {
+    } else if (categorySlug) {
         pageTitle = categoryName || "Produtos da Categoria";
     }
 
@@ -138,16 +131,27 @@ function Home() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [categoryId, searchTerm]);
+    }, [categorySlug, searchTerm]);
 
     useEffect(() => {
-        fetchProducts(currentPage);
-        if (categoryId) {
-            fetchCategoryInfo();
-        } else {
-            setCategoryName("");
-        }
-    }, [currentPage, categoryId, searchTerm])
+        const loadData = async () => {
+            if (categorySlug) {
+                const id = await getCategoryIdFromSlug(categorySlug);
+                if (id) {
+                    fetchProducts(currentPage, id);
+                } else {
+                    // Categoria não encontrada ou erro
+                    setProducts([]);
+                    setIsLoading(false);
+                }
+            } else {
+                setCategoryName("");
+                fetchProducts(currentPage);
+            }
+        };
+
+        loadData();
+    }, [currentPage, categorySlug, searchTerm])
 
     const handlePageChange = (newPage: number) => {
         if (!pagination) return;
@@ -159,15 +163,16 @@ function Home() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 pt-6">
+            <SEO title={pageTitle} />
             {/* Breadcrumbs */}
-            {(categoryId || searchTerm) && (
+            {(categorySlug || searchTerm) && (
                 <nav className="flex items-center text-sm text-gray-500 mb-8 overflow-x-auto whitespace-nowrap">
                     <Link to="/" className="flex items-center hover:text-[#008cff] transition-colors">
                         <HomeIcon className="w-4 h-4 mr-2" />
                         Início
                     </Link>
 
-                    {categoryId && (
+                    {categorySlug && (
                         <>
                             <ChevronRight className="w-4 h-4 mx-2" />
                             <span className="font-bold text-[#008cff]">{categoryName || 'Categoria'}</span>

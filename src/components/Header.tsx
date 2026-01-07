@@ -338,7 +338,7 @@ function Header() {
                                         {categories.map((category, index) => (
                                             <div key={index} className="group relative">
                                                 <Link
-                                                    to={`/categoria/${category.id}`}
+                                                    to={`/categoria/${category.slug}`}
                                                     className="flex items-center justify-between px-6 py-3.5 text-gray-600 hover:bg-blue-50 hover:text-[#028dfe] transition-all duration-200 group-hover:pl-7 border-l-4 border-transparent hover:border-[#028dfe]"
                                                 >
                                                     <span className="font-bold text-sm">
@@ -357,7 +357,7 @@ function Header() {
                                                             {category.children.map((sub, subIndex) => (
                                                                 <Link
                                                                     key={subIndex}
-                                                                    to={`/categoria/${sub.id}`}
+                                                                    to={`/categoria/${sub.slug}`}
                                                                     className="px-6 py-2.5 text-sm text-gray-500 hover:text-[#028dfe] hover:bg-blue-50 transition-colors font-medium flex items-center gap-2 group/sub"
                                                                 >
                                                                     <div className="w-1 h-1 rounded-full bg-gray-300 group-hover/sub:bg-[#028dfe] transition-colors"></div>
@@ -420,7 +420,7 @@ function Header() {
                                     <summary className="px-4 py-3 cursor-pointer hover:bg-gray-50 flex items-center justify-between list-none">
                                         <div className="flex items-center justify-between w-full">
                                             <Link
-                                                to={`/categoria/${category.id}`}
+                                                to={`/categoria/${category.slug}`}
                                                 className="flex-1 font-bold text-gray-800 dark:text-white"
                                                 onClick={() => {
                                                     setIsMenuOpen(false);
@@ -436,7 +436,7 @@ function Header() {
                                             {category.children.map((sub, subIndex) => (
                                                 <Link
                                                     key={subIndex}
-                                                    to={`/categoria/${sub.id}`}
+                                                    to={`/categoria/${sub.slug}`}
                                                     className="block py-2 text-gray-600 hover:text-[#028dfe]"
                                                     onClick={() => setIsMenuOpen(false)}
                                                 >
