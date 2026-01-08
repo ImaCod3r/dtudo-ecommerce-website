@@ -16,8 +16,8 @@ function Modal({ isOpen, onClose, title, children }: ModalProps) {
                 className="absolute inset-0"
                 onClick={onClose}
             ></div>
-            <div className="relative w-full max-w-xl bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-                <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <div className="relative w-full max-w-xl bg-white dark:bg-gray-800 rounded-[20px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+                <div className="px-8 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
                     <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">{title}</h3>
                     <button
                         onClick={onClose}

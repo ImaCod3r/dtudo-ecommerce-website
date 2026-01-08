@@ -191,13 +191,10 @@ function Home() {
 
             <div className="w-full">
                 <main className="w-full">
-                    <div className="flex items-center justify-between mb-6 sm:mb-10 px-1">
+                    <div className="flex items-center mb-6 sm:mb-10 px-1">
                         <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
                             {pageTitle}
                         </h2>
-                        <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">
-                            {isLoading ? 'Carregando...' : `${pagination?.total_items || products.length} Items`}
-                        </span>
                     </div>
 
                     {isLoading ? (
@@ -281,16 +278,44 @@ function Home() {
             )}
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                <div className="flex flex-col items-center justify-center gap-4">
-                    <div className="bg-[#008cff] p-6 rounded-full flex items-center justify-center">
-                        <MapIcon size={80} color="#fff" />
+                <div className="flex flex-col items-center justify-center p-2 max-w-sm mx-auto">
+                    {/* Ícone com Animação de Pulso Suave */}
+                    <div className="relative mb-6">
+                        <div className="absolute inset-0 bg-[#008cff] opacity-20 rounded-full animate-ping"></div>
+                        <div className="relative bg-linear-to-br from-[#008cff] to-[#0066ff] p-7 rounded-full shadow-lg shadow-blue-200">
+                            <MapIcon size={64} color="#fff" />
+                        </div>
                     </div>
-                    <h1 className="text-2xl font-bold text-center">Opa, precisamos que você ative sua localização para continuar.</h1>
-                    <p className="text-gray-500 text-center text-sm">A sua localização é usada para calcular o frete e os produtos mais próximos de você.</p>
-                    <button className="bg-[#008cff] text-white px-6 py-4 rounded-xl cursor-pointer" onClick={() => {
-                        refreshLocation();
-                        setIsModalOpen(false);
-                    }}>Ativar localização</button>
+
+                    {/* Conteúdo de Texto */}
+                    <div className="space-y-3 text-center mb-8">
+                        <h1 className="text-2xl font-extrabold text-gray-800 leading-tight">
+                            Ativar localização?
+                        </h1>
+                        <p className="text-gray-500 text-base leading-relaxed">
+                            Para calcular o <span className="font-semibold text-gray-700">frete exato</span> e mostrar os produtos mais <span className="font-semibold text-gray-700">próximos de você</span>, precisamos da sua permissão.
+                        </p>
+                    </div>
+
+                    {/* Botões */}
+                    <div className="w-full flex flex-col gap-3">
+                        <button
+                            className="w-full bg-[#008cff] hover:bg-[#0076d6] text-white font-bold py-4 rounded-2xl transition-all active:scale-95 shadow-md hover:shadow-blue-200"
+                            onClick={() => {
+                                refreshLocation();
+                                setIsModalOpen(false);
+                            }}
+                        >
+                            Permitir localização
+                        </button>
+
+                        <button
+                            className="w-full bg-transparent text-gray-400 hover:text-gray-600 font-medium py-2 transition-colors text-sm"
+                            onClick={() => setIsModalOpen(false)}
+                        >
+                            Agora não
+                        </button>
+                    </div>
                 </div>
             </Modal>
         </div>

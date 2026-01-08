@@ -180,17 +180,6 @@ function Profile() {
                         </h1>
                         <p className="text-gray-500 dark:text-gray-400 font-medium">{user?.email}</p>
                     </div>
-
-                    <div className="flex flex-wrap justify-center md:justify-start gap-3">
-                        <span className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 flex items-center gap-2">
-                            <ShieldCheck className="w-4 h-4" /> Cliente Verificado
-                        </span>
-                        {user.phone && (
-                            <span className="bg-blue-50 dark:bg-blue-900/20 text-[#028dfe] dark:text-blue-400 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-2xl border border-blue-100 dark:border-blue-800/50 flex items-center gap-2">
-                                <Phone className="w-4 h-4" /> {user.phone}
-                            </span>
-                        )}
-                    </div>
                 </div>
 
                 <div className="flex gap-3 z-10">

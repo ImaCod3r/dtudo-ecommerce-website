@@ -45,7 +45,7 @@ function Login() {
 
             <div className="flex flex-col lg:flex-row gap-10 lg:gap-5 justify-between mt-10">
                 <div className="w-full lg:w-1/2 flex flex-col gap-6 lg:mt-10">
-                    <h1 className="text-3xl lg:text-5xl text-left font-bold text-[#309EE9]">
+                    <h1 className="text-3xl lg:text-5xl text-left font-bold text-[#098fe9]">
                         Faça login para começar a sua experiência de compras.
                     </h1>
                     <p className="text-left text-gray-400 w-full lg:w-1/2">
